@@ -1,0 +1,13 @@
+use_small_heuristics = "Default"
+# use_small_heuristics = "Off"
+# chain_width = 60
+
+newline_style = "Unix"
+
+imports_granularity = "Crate"
+
+wrap_comments = true
+comment_width = 100
+
+# Put single-expression functions on a single line
+# fn_single_line = true

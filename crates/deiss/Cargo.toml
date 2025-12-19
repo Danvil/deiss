@@ -1,0 +1,15 @@
+[package]
+edition = "2024"
+name = "deiss"
+version = "0.1.0"
+
+[dependencies]
+env_logger = { workspace = true }
+eyre = { workspace = true }
+log = { workspace = true }
+pollster = { workspace = true }
+wgpu = { workspace = true }
+winit = { workspace = true }
+
+[lints]
+workspace = true

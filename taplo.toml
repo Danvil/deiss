@@ -1,0 +1,9 @@
+include = ["Cargo.toml", "crates/**/Cargo.toml"]
+
+[formatting]
+align_entries = false
+reorder_array = true
+reorder_keys = true
+
+[schema]
+path = "taplo://taplo.toml"
