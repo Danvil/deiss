@@ -1,4 +1,7 @@
-use crate::renderer::{Gpu, Renderer, Surface};
+use crate::{
+    audio::{ConsoleAudioListener, Playback},
+    renderer::{Gpu, Renderer, Surface},
+};
 use eyre::Result;
 use std::sync::Arc;
 use winit::{
@@ -59,6 +62,8 @@ struct State {
     window: Arc<Window>,
     surface: Surface,
     renderer: Renderer,
+
+    playback: Playback,
 }
 
 impl State {
@@ -66,11 +71,18 @@ impl State {
         let gpu = Arc::new(Gpu::new().await?);
         let surface = Surface::new(gpu.clone(), window.clone())?;
         let renderer = Renderer::new();
+
+        let mut playback = Playback::new()?;
+        let listener = ConsoleAudioListener::new();
+        playback.set_listener(listener);
+        playback.play("assets/785736__alien_i_trust__stargazer-by-alien-i-trust-125_bpm.wav")?;
+
         Ok(Self {
             gpu,
             window,
             surface,
             renderer,
+            playback,
         })
     }
 

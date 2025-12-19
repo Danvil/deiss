@@ -8,6 +8,7 @@ env_logger = { workspace = true }
 eyre = { workspace = true }
 log = { workspace = true }
 pollster = { workspace = true }
+rodio = { workspace = true }
 wgpu = { workspace = true }
 winit = { workspace = true }
 
