@@ -1,3 +1,5 @@
+use crate::audio::AudioSamples;
+
 use super::listener::AudioListener;
 use eyre::{Result, eyre};
 use rodio::{Decoder, OutputStream, Sink, Source};
@@ -53,9 +55,13 @@ where
         // Forward buffered samples to listener when buffer is full
         if self.buffer.len() >= self.buffer_size {
             if let Ok(mut listener) = self.listener.lock() {
-                listener.on_samples(&self.buffer, self.sample_rate, self.channels);
+                let samples = AudioSamples::new(
+                    core::mem::take(&mut self.buffer),
+                    self.sample_rate,
+                    self.channels,
+                );
+                listener.on_samples(&samples);
             }
-            self.buffer.clear();
         }
 
         Some(sample)
@@ -107,11 +113,8 @@ impl Playback {
     }
 
     /// Sets an audio listener to receive samples during playback
-    pub fn set_listener<L>(&mut self, listener: L)
-    where
-        L: AudioListener + Send + 'static,
-    {
-        self.listener = Some(Arc::new(Mutex::new(listener)));
+    pub fn set_listener(&mut self, listener: Arc<Mutex<dyn AudioListener + Send>>) {
+        self.listener = Some(listener);
     }
 
     /// Loads and plays an audio file

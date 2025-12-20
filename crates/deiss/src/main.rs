@@ -1,6 +1,7 @@
-mod audio;
+pub mod audio;
 mod deiss_app;
-mod renderer;
+pub mod effects;
+pub mod renderer;
 
 use crate::deiss_app::DeissApp;
 use eyre::Result;

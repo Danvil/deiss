@@ -1,3 +1,5 @@
+use crate::audio::AudioSamples;
+
 use super::listener::AudioListener;
 
 /// An AudioListener implementation that writes audio sample information to the console
@@ -18,15 +20,15 @@ impl Default for ConsoleAudioListener {
 }
 
 impl AudioListener for ConsoleAudioListener {
-    fn on_samples(&mut self, samples: &[f32], sample_rate: u32, channels: u16) {
+    fn on_samples(&mut self, samples: &AudioSamples) {
         self.sample_count += samples.len();
 
         // Print summary information
         println!(
             "Received {} samples | Sample rate: {} Hz | Channels: {} | Total samples: {}",
             samples.len(),
-            sample_rate,
-            channels,
+            samples.sample_rate(),
+            samples.channels(),
             self.sample_count
         );
 

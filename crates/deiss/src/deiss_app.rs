@@ -1,9 +1,10 @@
 use crate::{
-    audio::{ConsoleAudioListener, Playback},
+    audio::Playback,
+    effects::Painter,
     renderer::{Gpu, Renderer, Surface},
 };
 use eyre::Result;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -18,8 +19,13 @@ pub struct DeissApp {
 
 impl DeissApp {
     fn resumed_impl(&mut self, event_loop: &ActiveEventLoop) -> Result<()> {
-        let window =
-            Arc::new(event_loop.create_window(WindowAttributes::default().with_title("DEISS"))?);
+        let window = Arc::new(
+            event_loop.create_window(
+                WindowAttributes::default()
+                    .with_title("DEISS")
+                    .with_inner_size(winit::dpi::LogicalSize::new(320.0, 240.0)),
+            )?,
+        );
 
         self.state = Some(pollster::block_on(State::new(window))?);
 
@@ -62,19 +68,21 @@ struct State {
     window: Arc<Window>,
     surface: Surface,
     renderer: Renderer,
-
     playback: Playback,
+    painter: Arc<Mutex<Painter>>,
 }
 
 impl State {
     pub async fn new(window: Arc<Window>) -> Result<Self> {
         let gpu = Arc::new(Gpu::new().await?);
         let surface = Surface::new(gpu.clone(), window.clone())?;
-        let renderer = Renderer::new();
+        let renderer = Renderer::new(&gpu);
+
+        let painter = Arc::new(Mutex::new(Painter::new(surface.size_as_shape())));
+        // let listener = ConsoleAudioListener::new();
 
         let mut playback = Playback::new()?;
-        let listener = ConsoleAudioListener::new();
-        playback.set_listener(listener);
+        playback.set_listener(painter.clone());
         playback.play("assets/785736__alien_i_trust__stargazer-by-alien-i-trust-125_bpm.wav")?;
 
         Ok(Self {
@@ -83,6 +91,7 @@ impl State {
             surface,
             renderer,
             playback,
+            painter,
         })
     }
 
@@ -100,7 +109,11 @@ impl State {
             .texture()
             .expect("failed to acquire next swapchain texture");
 
-        self.renderer.render(&self.gpu, texture_view);
+        self.renderer.render(
+            &self.gpu,
+            texture_view,
+            self.painter.lock().unwrap().image(),
+        );
 
         self.window.pre_present_notify();
         surface_texture.present();

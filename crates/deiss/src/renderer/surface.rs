@@ -1,4 +1,4 @@
-use crate::renderer::Gpu;
+use crate::{effects::Shape2, renderer::Gpu};
 use eyre::Result;
 use std::sync::Arc;
 use winit::window::Window;
@@ -33,6 +33,10 @@ impl Surface {
 
     pub fn format(&self) -> wgpu::TextureFormat {
         self.format
+    }
+
+    pub fn size_as_shape(&self) -> Shape2 {
+        (self.size.height, self.size.width).into()
     }
 
     pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
