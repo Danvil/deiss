@@ -1,5 +1,4 @@
-use crate::effects::RgbaImage;
-use crate::renderer::Gpu;
+use crate::{renderer::Gpu, utils::RgbaImage};
 use wgpu::TextureView;
 
 pub struct Renderer {

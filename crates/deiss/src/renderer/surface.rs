@@ -1,4 +1,4 @@
-use crate::{effects::Shape2, renderer::Gpu};
+use crate::{renderer::Gpu, utils::Shape2};
 use eyre::Result;
 use std::sync::Arc;
 use winit::window::Window;

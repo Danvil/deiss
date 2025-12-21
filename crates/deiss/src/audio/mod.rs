@@ -12,7 +12,7 @@ pub use playback::Playback;
 
 pub struct AudioSamples {
     /// Slice of f32 audio samples (interleaved if stereo)
-    samples: Vec<f32>,
+    samples: Vec<u16>,
 
     /// The sample rate of the audio
     sample_rate: u32,
@@ -22,7 +22,7 @@ pub struct AudioSamples {
 }
 
 impl AudioSamples {
-    pub fn new(samples: Vec<f32>, sample_rate: u32, channels: u16) -> Self {
+    pub fn new(samples: Vec<u16>, sample_rate: u32, channels: u16) -> Self {
         AudioSamples {
             samples,
             sample_rate,
@@ -30,11 +30,7 @@ impl AudioSamples {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.samples.len()
-    }
-
-    pub fn samples(&self) -> &[f32] {
+    pub fn samples(&self) -> &[u16] {
         &self.samples
     }
 
@@ -48,7 +44,7 @@ impl AudioSamples {
 }
 
 impl Deref for AudioSamples {
-    type Target = [f32];
+    type Target = [u16];
 
     fn deref(&self) -> &Self::Target {
         &self.samples

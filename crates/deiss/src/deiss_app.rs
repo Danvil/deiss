@@ -1,5 +1,6 @@
 use crate::{
     audio::Playback,
+    config::{Config, SharedConfig},
     effects::Painter,
     renderer::{Gpu, Renderer, Surface},
 };
@@ -12,22 +13,29 @@ use winit::{
     window::{Window, WindowAttributes, WindowId},
 };
 
-#[derive(Default)]
 pub struct DeissApp {
+    config: SharedConfig,
     state: Option<State>,
 }
 
 impl DeissApp {
+    pub fn new(config: Config) -> Self {
+        DeissApp {
+            config: SharedConfig::new(config),
+            state: None,
+        }
+    }
+
     fn resumed_impl(&mut self, event_loop: &ActiveEventLoop) -> Result<()> {
         let window = Arc::new(
             event_loop.create_window(
                 WindowAttributes::default()
                     .with_title("DEISS")
-                    .with_inner_size(winit::dpi::LogicalSize::new(320.0, 240.0)),
+                    .with_inner_size(winit::dpi::LogicalSize::new(640.0, 480.0)),
             )?,
         );
 
-        self.state = Some(pollster::block_on(State::new(window))?);
+        self.state = Some(pollster::block_on(State::new(window, self.config.clone()))?);
 
         Ok(())
     }
@@ -40,7 +48,7 @@ impl ApplicationHandler for DeissApp {
         }
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         let Some(state) = self.state.as_mut() else {
             log::error!("app no resumed");
             return;
@@ -68,12 +76,13 @@ struct State {
     window: Arc<Window>,
     surface: Surface,
     renderer: Renderer,
+    config: SharedConfig,
     playback: Playback,
     painter: Arc<Mutex<Painter>>,
 }
 
 impl State {
-    pub async fn new(window: Arc<Window>) -> Result<Self> {
+    pub async fn new(window: Arc<Window>, config: SharedConfig) -> Result<Self> {
         let gpu = Arc::new(Gpu::new().await?);
         let surface = Surface::new(gpu.clone(), window.clone())?;
         let renderer = Renderer::new(&gpu);
@@ -83,13 +92,17 @@ impl State {
 
         let mut playback = Playback::new()?;
         playback.set_listener(painter.clone());
-        playback.play("assets/785736__alien_i_trust__stargazer-by-alien-i-trust-125_bpm.wav")?;
+
+        let filename = config.lock().filename;
+        log::info!("Now playing: {filename}");
+        playback.play(&filename)?;
 
         Ok(Self {
             gpu,
             window,
             surface,
             renderer,
+            config,
             playback,
             painter,
         })
@@ -104,10 +117,16 @@ impl State {
     }
 
     pub fn render(&mut self) {
+        if self.playback.is_empty() {
+            self.playback.play(&self.config.lock().filename).unwrap();
+        }
+
         let (surface_texture, texture_view) = self
             .surface
             .texture()
             .expect("failed to acquire next swapchain texture");
+
+        self.painter.lock().unwrap().on_render();
 
         self.renderer.render(
             &self.gpu,

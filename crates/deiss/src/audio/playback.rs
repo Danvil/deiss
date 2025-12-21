@@ -14,19 +14,19 @@ use std::{
 /// Custom source wrapper that forwards samples to a listener
 struct MonitoredSource<S>
 where
-    S: Source<Item = f32>,
+    S: Source<Item = u16>,
 {
     source: S,
     listener: Arc<Mutex<dyn AudioListener + Send>>,
     sample_rate: u32,
     channels: u16,
-    buffer: Vec<f32>,
+    buffer: Vec<u16>,
     buffer_size: usize,
 }
 
 impl<S> MonitoredSource<S>
 where
-    S: Source<Item = f32>,
+    S: Source<Item = u16>,
 {
     fn new(source: S, listener: Arc<Mutex<dyn AudioListener + Send>>, buffer_size: usize) -> Self {
         let sample_rate = source.sample_rate();
@@ -44,9 +44,9 @@ where
 
 impl<S> Iterator for MonitoredSource<S>
 where
-    S: Source<Item = f32>,
+    S: Source<Item = u16>,
 {
-    type Item = f32;
+    type Item = u16;
 
     fn next(&mut self) -> Option<Self::Item> {
         let sample = self.source.next()?;
@@ -70,7 +70,7 @@ where
 
 impl<S> Source for MonitoredSource<S>
 where
-    S: Source<Item = f32>,
+    S: Source<Item = u16>,
 {
     fn current_frame_len(&self) -> Option<usize> {
         self.source.current_frame_len()
@@ -125,11 +125,12 @@ impl Playback {
             .map_err(|e| eyre!("Failed to decode audio file: {}", e))?;
 
         // Convert to f32 samples
-        let source = source.convert_samples::<f32>();
+        let source = source.convert_samples();
 
         // If we have a listener, wrap the source to forward samples
         if let Some(listener) = &self.listener {
-            let monitored_source = MonitoredSource::new(source, Arc::clone(listener), 4096);
+            let buffer_size = listener.lock().unwrap().buffer_size();
+            let monitored_source = MonitoredSource::new(source, Arc::clone(listener), buffer_size);
             self.sink.append(monitored_source);
         } else {
             self.sink.append(source);

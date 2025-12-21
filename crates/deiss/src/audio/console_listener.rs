@@ -20,6 +20,10 @@ impl Default for ConsoleAudioListener {
 }
 
 impl AudioListener for ConsoleAudioListener {
+    fn buffer_size(&self) -> usize {
+        4096
+    }
+
     fn on_samples(&mut self, samples: &AudioSamples) {
         self.sample_count += samples.len();
 
