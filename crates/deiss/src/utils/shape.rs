@@ -2,16 +2,19 @@
 pub struct Shape2(u32, u32);
 
 impl Shape2 {
+    /// Rows / height
     pub fn rows(&self) -> u32 {
         self.0
     }
 
+    /// Columns / width
     pub fn cols(&self) -> u32 {
         self.1
     }
 
-    pub fn count(&self) -> u32 {
-        self.0 * self.1
+    /// Number of pixels covered by the shape
+    pub fn len(&self) -> usize {
+        (self.0 * self.1) as usize
     }
 }
 

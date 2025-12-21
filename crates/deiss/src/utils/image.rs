@@ -10,12 +10,12 @@ pub struct Image<T> {
 
 impl<T> Image<T> {
     pub fn from_vec(shape: Shape2, buffer: Vec<T>) -> Self {
-        assert_eq!(shape.count() as usize, buffer.len());
+        assert_eq!(shape.len(), buffer.len());
         Self { shape, buffer }
     }
 
     pub fn from_fn(shape: Shape2, mut f: impl FnMut((u32, u32)) -> T) -> Self {
-        let mut buffer = Vec::with_capacity(shape.count() as usize);
+        let mut buffer = Vec::with_capacity(shape.len());
         for i in 0..shape.rows() {
             for j in 0..shape.cols() {
                 buffer.push(f((i, j)));
@@ -30,7 +30,7 @@ impl<T> Image<T> {
     {
         Self {
             shape,
-            buffer: vec![value; shape.count() as usize],
+            buffer: vec![value; shape.len()],
         }
     }
 
