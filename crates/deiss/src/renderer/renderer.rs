@@ -1,5 +1,8 @@
-use crate::{renderer::Gpu, utils::RgbaImage};
-use wgpu::TextureView;
+use crate::{
+    renderer::Gpu,
+    utils::{RgbaImage, Shape2},
+};
+use wgpu::{TextureView, util::DeviceExt};
 
 pub struct Renderer {
     render_pipeline: wgpu::RenderPipeline,
@@ -38,6 +41,16 @@ impl Renderer {
                             binding: 1,
                             visibility: wgpu::ShaderStages::FRAGMENT,
                             ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
                             count: None,
                         },
                     ],
@@ -109,7 +122,13 @@ impl Renderer {
         }
     }
 
-    pub fn render(&self, gpu: &Gpu, texture_view: TextureView, image: &RgbaImage) {
+    pub fn render(
+        &self,
+        gpu: &Gpu,
+        texture_view: TextureView,
+        surface_shape: Shape2,
+        image: &RgbaImage,
+    ) {
         let texture_size = wgpu::Extent3d {
             width: image.cols(),
             height: image.rows(),
@@ -145,6 +164,21 @@ impl Renderer {
 
         let source_texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+        // Create uniform buffer for aspect ratio calculations
+        let uniform_data = [
+            image.cols() as f32,         // image_width
+            image.rows() as f32,         // image_height
+            surface_shape.cols() as f32, // surface_width
+            surface_shape.rows() as f32, // surface_height
+        ];
+        let uniform_buffer = gpu
+            .device()
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Aspect Ratio Uniform Buffer"),
+                contents: bytemuck::cast_slice(&uniform_data),
+                usage: wgpu::BufferUsages::UNIFORM,
+            });
+
         let bind_group = gpu.device().create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &self.bind_group_layout,
             entries: &[
@@ -155,6 +189,10 @@ impl Renderer {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: uniform_buffer.as_entire_binding(),
                 },
             ],
             label: Some("texture_bind_group"),

@@ -4,6 +4,7 @@ name = "deiss"
 version = "0.1.0"
 
 [dependencies]
+bytemuck = { workspace = true }
 env_logger = { workspace = true }
 eyre = { workspace = true }
 log = { workspace = true }

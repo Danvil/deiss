@@ -131,6 +131,7 @@ impl State {
         self.renderer.render(
             &self.gpu,
             texture_view,
+            self.surface.size_as_shape(),
             self.painter.lock().unwrap().image(),
         );
 
