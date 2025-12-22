@@ -16,6 +16,10 @@ impl Shape2 {
     pub fn len(&self) -> usize {
         (self.0 * self.1) as usize
     }
+
+    pub fn offset(&self, (i, j): (u32, u32)) -> usize {
+        (i * self.cols() + j) as usize
+    }
 }
 
 impl From<(u32, u32)> for Shape2 {

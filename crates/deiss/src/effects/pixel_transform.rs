@@ -1,10 +1,10 @@
-use crate::{effects::globals::MinstdRand, utils::*};
+use crate::utils::*;
 
 pub trait PixelTransform {
     fn transform(&self, p: Vec2) -> Vec2;
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Rot2 {
     sin: f32,
     cos: f32,
@@ -23,7 +23,7 @@ impl Rot2 {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TurnScaleTransform {
     scale: f32,
     turn: f32,
@@ -31,7 +31,7 @@ pub struct TurnScaleTransform {
 }
 
 impl TurnScaleTransform {
-    pub fn from_scale_turn_raw(scale: f32, mut turn: f32, rand: &mut MinstdRand) -> Self {
+    pub fn from_scale_turn_raw(scale: f32, mut turn: f32, rand: &mut Minstd) -> Self {
         if rand.next_bool() {
             turn *= -1.;
         }
@@ -42,20 +42,16 @@ impl TurnScaleTransform {
     }
 
     pub fn from_scale_turn(scale: f32, turn: f32) -> Self {
-        Self {
-            scale,
-            turn,
-            rot: Rot2::from_angle(turn),
-        }
+        Self { scale, turn, rot: Rot2::from_angle(turn) }
     }
 
-    pub fn mode_2(rand: &mut MinstdRand) -> Self {
+    pub fn mode_2(rand: &mut Minstd) -> Self {
         let scale = 1.00 - 0.02 * rand.next_01_prom();
         let turn = 0.02 + 0.07 * rand.next_01_prom();
         Self::from_scale_turn_raw(scale, turn, rand)
     }
 
-    pub fn mode_3(rand: &mut MinstdRand) -> Self {
+    pub fn mode_3(rand: &mut Minstd) -> Self {
         let scale = 0.85 + 0.10 * rand.next_01_prom();
         let turn = 0.01 + 0.015 * rand.next_01_prom();
         Self::from_scale_turn_raw(scale, turn, rand)
@@ -68,7 +64,7 @@ impl PixelTransform for TurnScaleTransform {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DitherTurnScaleTransform {
     parts: [TurnScaleTransform; 2],
 }
@@ -78,7 +74,7 @@ impl DitherTurnScaleTransform {
         Self { parts }
     }
 
-    pub fn from_scale_turn_raw(scale: [f32; 2], mut turn: [f32; 2], rand: &mut MinstdRand) -> Self {
+    pub fn from_scale_turn_raw(scale: [f32; 2], mut turn: [f32; 2], rand: &mut Minstd) -> Self {
         if rand.next_bool() {
             turn[0] *= -1.;
             turn[1] *= -1.;
@@ -93,7 +89,7 @@ impl DitherTurnScaleTransform {
         ])
     }
 
-    pub fn mode_1(rand: &mut MinstdRand) -> Self {
+    pub fn mode_1(rand: &mut Minstd) -> Self {
         let scale1 = 0.985 - 0.12 * rand.next_01_prom().powi(2);
         let scale2 = scale1;
 
@@ -118,7 +114,7 @@ impl PixelTransform for DitherTurnScaleTransform {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum AnyTransform {
     TurnScale(TurnScaleTransform),
     DitherTurnScale(DitherTurnScaleTransform),

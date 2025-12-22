@@ -1,11 +1,4 @@
-use crate::{
-    effects::{
-        globals::{Globals, MinstdRand},
-        mode::{AnyTransform, DitherTurnScaleTransform, PixelTransform, TurnScaleTransform},
-        settings::{Mode, Settings},
-    },
-    utils::*,
-};
+use crate::{effects::*, utils::*};
 
 #[derive(Clone, Copy, Default)]
 pub struct FxPxl {
@@ -18,24 +11,27 @@ pub type FlowMap = Image<FxPxl>;
 #[derive(Clone)]
 pub struct FlowMapSpec {
     pub settings: Settings,
+    pub effects: Effects,
+    pub mode: ModeId,
+    pub waveform: u32,
     pub center: Vec2,
     pub damping: f32,
-    pub mode: AnyTransform,
+    pub tf: AnyTransform,
 }
 
 impl FlowMapSpec {
-    pub fn generate(s: &Settings, g: &mut Globals) -> Self {
+    pub fn generate(s: &Settings, fx: &ModeBlueprintLibrary, g: &mut Globals) -> Self {
         let mode = s.mode_prefs.pick(&mut g.rand);
+
+        let [effects_min, effects_max] = fx[mode].effect_count;
+        let effects =
+            fx[mode].effect_freq.sample((effects_min as usize, effects_max as usize), &mut g.rand);
 
         let gxc = (s.fxw / 2 - 1) as f32 + g.rand.next_idx(60) as f32 - 30.;
         let gyc = (s.fxh / 2 - 1) as f32 + g.rand.next_idx(30) as f32 - 15.;
 
         let damping = g.suggested_dampening.clamp(0.50, 1.00)
-            * if s.mode_settings[mode].motion_dampened {
-                0.5
-            } else {
-                1.0
-            };
+            * if fx[mode].motion_dampened { 0.5 } else { 1.0 };
 
         let damping_tmp = if 10. <= g.fps_at_last_mode_switch && g.fps_at_last_mode_switch <= 120. {
             damping * 30. / g.fps_at_last_mode_switch
@@ -47,30 +43,28 @@ impl FlowMapSpec {
 
         g.big_beat_threshold = 1.10; // ??
 
-        let mode = match mode {
-            Mode(1) => DitherTurnScaleTransform::mode_1(&mut g.rand).into(),
-            Mode(2) => TurnScaleTransform::mode_2(&mut g.rand).into(),
-            Mode(3) => TurnScaleTransform::mode_3(&mut g.rand).into(),
-            _ => TurnScaleTransform::from_scale_turn(1., 0.).into(),
-        };
+        let tf = fx[mode].generate_transform(&mut g.rand);
 
         FlowMapSpec {
             settings: s.clone(),
+            effects,
+            mode,
+            waveform,
             center: Vec2::new(gxc, gyc),
             damping: damping_tmp,
-            mode,
+            tf,
         }
     }
 }
 
-fn pick_compatible_waveform(mode: Mode, rand: &mut MinstdRand) -> u32 {
+fn pick_compatible_waveform(mode: ModeId, rand: &mut Minstd) -> u32 {
     loop {
         let waveform = rand.next_idx(NUM_WAVES * 3 - 1) / 3 + 1;
 
-        if !((mode == Mode(6) && waveform == 5)
-            || (mode == Mode(12) && (waveform == 4 || waveform == 6))
-            || (mode == Mode(14) && (waveform == 3 || waveform == 4))
-            || ((mode == Mode(8) || mode == Mode(23) || mode == Mode(24)) && waveform == 6))
+        if !((mode == ModeId(6) && waveform == 5)
+            || (mode == ModeId(12) && (waveform == 4 || waveform == 6))
+            || (mode == ModeId(14) && (waveform == 3 || waveform == 4))
+            || ((mode == ModeId(8) || mode == ModeId(23) || mode == ModeId(24)) && waveform == 6))
         {
             return waveform;
         }
@@ -92,7 +86,7 @@ impl FlowMapGen {
     pub fn run(&mut self) -> FlowMap {
         let s = &self.spec.settings;
         self.y_map_pos = s.fx_ycut * s.fxw;
-        bake(s, self.spec.center, self.spec.damping, &self.spec.mode)
+        bake(s, self.spec.center, self.spec.damping, &self.spec.tf)
     }
 }
 
@@ -106,10 +100,7 @@ pub fn bake<M: PixelTransform>(s: &Settings, center: Vec2, damping: f32, mode: &
     };
 
     Image::from_fn((s.fxh, s.fxw).into(), |(i, j)| {
-        let pi = Vec2 {
-            x: j as f32,
-            y: i as f32,
-        };
+        let pi = Vec2 { x: j as f32, y: i as f32 };
 
         let p2 = mode.transform(pi - center) + center;
 

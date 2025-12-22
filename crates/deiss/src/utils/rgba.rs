@@ -16,6 +16,12 @@ impl Rgba {
             (self.0[3] as f32 * scale) as u8,
         ])
     }
+
+    pub fn sat_add_u8_3(&mut self, delta: [u8; 3]) {
+        for i in 0..3 {
+            self[i] = self[i].saturating_add(delta[i]);
+        }
+    }
 }
 
 impl ops::Index<usize> for Rgba {

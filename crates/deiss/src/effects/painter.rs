@@ -1,72 +1,25 @@
-use std::{f32, mem};
-
 use crate::{
     audio::{AudioListener, AudioSamples},
-    effects::{
-        flow::{FlowMapSpec, process_map},
-        flow_hub::FlowMapHub,
-        globals::Globals,
-        settings::{ModePrefs, ModeSettings, ModeSettingsVec, Settings},
-    },
+    effects::*,
     utils::*,
 };
+use std::{f32, mem};
 
 pub struct Painter {
     settings: Settings,
+    library: ModeBlueprintLibrary,
     globals: Globals,
     img: RgbaImage,
     next: RgbaImage,
-    fx: FlowMapHub,
-}
-
-fn new_motion_settings() -> ModeSettingsVec {
-    let mode_motion_dampened = [
-        true, true, true, false, true, true, false, true, true,
-        true, // 0 is bunk; 1-9 here (3,6 not dampened)
-        true, true, true, true, true, true, true, // modes 10-16 are all dampened
-        false, false, false, // 17 - 19 are normal
-        false, false, false, false, false, // 20 - 24 are normal
-        false, false, false, false, false, // 25 - 29 are normal
-        false, false, false, false, false, // 30 - 34 are normal
-        false, false, false, false, false, // 35 - 39 are normal
-    ];
-
-    let rotation_dither = [
-        false, true, false, false, false, false, false, false, false,
-        true, // 0-9 (0 is unused)
-        false, true, false, false, false, // 10 - 14
-        false, false, false, false, false, // 15 - 19
-        false, false, false, false, false, // 20 - 24
-        false, false, false, false, false, // 25 - 29
-        false, false, false, false, false, // 30 - 34
-        false, false, false, false, false, // 35 - 39
-    ];
-
-    let custom_motion_vectors = [
-        // 6, 10, 12 are true
-        false, false, false, false, false, false, true, false, false,
-        false, // 0-9 (0 is unused)
-        true, false, true, false, false, // 10 - 14
-        false, false, false, false, false, // 15 - 19
-        false, false, false, false, false, // 20 - 24
-        false, false, false, false, false, // 25 - 29
-        false, false, false, false, false, // 30 - 34
-        false, false, false, false, false, // 35 - 39
-    ];
-
-    ModeSettingsVec::from_vec(
-        (0..40)
-            .map(|i| ModeSettings {
-                motion_dampened: mode_motion_dampened[i],
-                rotation_dither: rotation_dither[i],
-                custom_motion_vector: custom_motion_vectors[i],
-            })
-            .collect(),
-    )
+    fx_hub: FlowMapHub,
+    fx: Option<(FlowMapSpec, FlowMap)>,
+    needs_init: bool,
 }
 
 impl Painter {
     pub fn new(shape: Shape2) -> Self {
+        const DISP_BIT: u32 = 32;
+
         let mut globals = Globals::default();
 
         let (fxh, fxw) = shape.into();
@@ -77,20 +30,24 @@ impl Painter {
             fxw,
             fxh,
             fx_ycut: 90,
-            disp_bits: 32,
+            disp_bits: DISP_BIT,
             chaser_offset: globals.rand.next_idx(40_000),
             gf: core::array::from_fn(|_| {
                 ((globals.rand.next_idx(1000) as f32) * 0.001) * 0.01 + 0.02
             }),
             mode_prefs: ModePrefs::new(),
-            mode_settings: new_motion_settings(),
         };
+
+        let library = ModeBlueprintLibrary::new(DISP_BIT, &mut globals);
 
         Self {
             img: RgbaImage::black(shape),
             next: RgbaImage::black(shape),
-            fx: FlowMapHub::new(),
+            fx_hub: FlowMapHub::new(),
+            fx: None,
+            needs_init: true,
             settings,
+            library,
             globals,
         }
     }
@@ -100,17 +57,44 @@ impl Painter {
     }
 
     pub fn on_render(&mut self) {
+        self.globals.frame += 1;
+        self.globals.floatframe += 1.6 * (47.0 / self.globals.fps_at_last_mode_switch).min(1.);
+
         self.globals.fps.step();
 
-        self.fx.step(&self.settings, &mut self.globals).ok();
-        let Some((spec, fx)) = self.fx.current() else {
+        self.fx_hub.step(&self.settings, &self.library, &mut self.globals).ok();
+        if let Some(fx) = self.fx_hub.fetch() {
+            self.fx = Some(fx);
+            self.needs_init = true;
+        }
+
+        let Some((spec, fx)) = self.fx.as_ref() else {
             return;
         };
+
+        if self.needs_init {
+            self.needs_init = false;
+
+            if spec.mode == ModeId(1) && self.globals.rand.next_bool() {
+                // println!(" >> SolarParticles");
+                SolarParticles { center: (spec.center.x as i32, spec.center.y as i32), count: 500 }
+                    .render(&mut self.img, &mut self.globals.rand);
+            }
+        }
+
+        if spec.effects[EffectKind::Shade] {
+            // println!(" >> ShadeBobs");
+            ShadeBobs::new(spec.center, self.globals.floatframe, &mut self.globals.rand)
+                .render(&mut self.img, &mut self.globals.rand);
+        }
 
         process_map(&self.settings, fx.as_slice(), &self.img, &mut self.next);
         mem::swap(&mut self.img, &mut self.next);
 
-        render_dots(&mut self.img, &spec, &self.settings, &mut self.globals);
+        if let Some(fx) = Dots::new(&spec, &self.settings, &mut self.globals) {
+            // println!(" >> Dots");
+            fx.render(&mut self.img, &mut self.globals.rand);
+        }
     }
 }
 
@@ -125,8 +109,6 @@ impl AudioListener for Painter {
 }
 
 fn process_wave_data(wave: &AudioSamples, s: &Settings, g: &mut Globals) {
-    g.frame += 1;
-
     let mut buf = wave.iter().map(|&v| v as f32).collect::<Vec<_>>();
 
     level_trigger(&mut buf, s, g);
@@ -136,22 +118,13 @@ fn process_wave_data(wave: &AudioSamples, s: &Settings, g: &mut Globals) {
 
     let peaks = 0.; // TODO seems to be always 0 in the source
 
-    g.avg_vol_narrow = blend(
-        adjust_rate_to_fps(0.30, 30., g.fps_at_last_mode_switch),
-        (g.avg_vol_narrow, vol),
-    );
-    g.avg_vol = blend(
-        adjust_rate_to_fps(0.85, 30., g.fps_at_last_mode_switch),
-        (g.avg_vol, vol),
-    );
-    g.avg_vol_wide = blend(
-        adjust_rate_to_fps(0.96, 30., g.fps_at_last_mode_switch),
-        (g.avg_vol_wide, vol),
-    );
-    g.avg_vol_peaks = blend(
-        adjust_rate_to_fps(0.90, 30., g.fps_at_last_mode_switch),
-        (g.avg_vol_peaks, peaks),
-    );
+    g.avg_vol_narrow =
+        blend(adjust_rate_to_fps(0.30, 30., g.fps_at_last_mode_switch), (g.avg_vol_narrow, vol));
+    g.avg_vol = blend(adjust_rate_to_fps(0.85, 30., g.fps_at_last_mode_switch), (g.avg_vol, vol));
+    g.avg_vol_wide =
+        blend(adjust_rate_to_fps(0.96, 30., g.fps_at_last_mode_switch), (g.avg_vol_wide, vol));
+    g.avg_vol_peaks =
+        blend(adjust_rate_to_fps(0.90, 30., g.fps_at_last_mode_switch), (g.avg_vol_peaks, peaks));
     g.volume_sum += g.avg_vol as u64;
 
     low_pass_filter_inplace(&mut buf);
@@ -175,11 +148,8 @@ fn process_wave_data(wave: &AudioSamples, s: &Settings, g: &mut Globals) {
 
     // dampening based on spectral variance
     if s.enable_map_dampening {
-        g.suggested_dampening = if g.frame < 50 {
-            1.
-        } else {
-            g.suggested_dampening * 0.98 + net_power_change * 0.02
-        };
+        g.suggested_dampening =
+            if g.frame < 50 { 1. } else { g.suggested_dampening * 0.98 + net_power_change * 0.02 };
     } else {
         g.suggested_dampening = 1.0;
     }
@@ -304,66 +274,5 @@ impl RunningFourier {
         }
 
         net_power_change
-    }
-}
-
-fn render_dots(img: &mut RgbaImage, spec: &FlowMapSpec, s: &Settings, g: &mut Globals) {
-    if g.vol.current() <= g.avg_vol_narrow * 1.1 {
-        return;
-    }
-
-    let nodes = 3 + g.rand.next_idx(5);
-
-    let phase = g.rand.next_idx(1000) as f32;
-
-    let mut r =
-        (if s.fxw == 320 { 2. } else { 3. } + 40. * (g.vol.current() / g.avg_vol_narrow - 1.1));
-    r = r.max(1.);
-    let r = if s.fxw == 320 { r.min(7.) } else { r.min(10.) };
-
-    let rad = if s.fxw == 320 {
-        (22 + g.rand.next_idx(6)) as f32
-    } else {
-        (34 + g.rand.next_idx(8)) as f32 * ((s.fxw as f32) / 1024.).max(1.)
-    };
-
-    let col = if s.disp_bits > 8 {
-        let i = (g.frame + s.chaser_offset as u64) as f32;
-        let f = 7. * (i * 0.007 + 29.).sin() + 5. * (i * 0.0057 + 27.).cos();
-        [
-            0.58 + 0.21 * (i * s.gf[0] + 20. - f).sin() + 0.21 * (i * s.gf[3] + 17. + f).cos(),
-            0.58 + 0.21 * (i * s.gf[1] + 42. + f).sin() + 0.21 * (i * s.gf[4] + 26. - f).cos(),
-            0.58 + 0.21 * (i * s.gf[2] + 57. - f).sin() + 0.21 * (i * s.gf[5] + 35. + f).cos(),
-        ]
-    } else {
-        [1., 1., 1.]
-    };
-    // println!("{cr} {cg} {cb}");
-
-    for n in 0..nodes {
-        let (th_cos, th_sin) = ((n as f32) / (nodes as f32) * f32::consts::TAU + phase).sin_cos();
-        let cx = (spec.center.x + rad * th_cos) as i32;
-        let cy = (spec.center.y + rad * th_sin) as i32;
-        // println!("{cx} {cy}");
-
-        for y in -10..=10 {
-            for x in -10..=10 {
-                let scl = (r - ((x * x + y * y) as f32).sqrt()) * 25.;
-                if scl > 0. {
-                    if s.disp_bits == 8 {
-                        todo!()
-                    } else {
-                        let pxl_idx = ((cy + y) as u32, (cx + x) as u32);
-                        rgba_scl_add_inpl(&mut img[pxl_idx], scl, col);
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn rgba_scl_add_inpl(v: &mut Rgba, scl: f32, d: [f32; 3]) {
-    for i in 0..3 {
-        v[i] = v[i].saturating_add((scl * d[i]) as u8);
     }
 }

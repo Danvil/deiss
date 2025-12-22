@@ -2,6 +2,7 @@ use crate::{
     effects::{
         flow::{FlowMap, FlowMapGen, FlowMapSpec, FxPxl},
         globals::Globals,
+        mode_blueprint_library::ModeBlueprintLibrary,
         settings::Settings,
     },
     utils::*,
@@ -30,10 +31,10 @@ impl FlowMapHub {
         }
     }
 
-    pub fn step(&mut self, s: &Settings, g: &mut Globals) -> Result<()> {
+    pub fn step(&mut self, s: &Settings, fx: &ModeBlueprintLibrary, g: &mut Globals) -> Result<()> {
         if self.worker.is_idle() {
             if self.next_switch_time < Instant::now() {
-                let spec = FlowMapSpec::generate(s, g);
+                let spec = FlowMapSpec::generate(s, fx, g);
                 self.next_spec = Some(spec.clone());
                 self.worker.start(spec)?;
                 self.next_switch_time = Instant::now() + Duration::from_secs(3);
@@ -47,8 +48,8 @@ impl FlowMapHub {
         Ok(())
     }
 
-    pub fn current(&self) -> Option<&(FlowMapSpec, FlowMap)> {
-        self.current.as_ref()
+    pub fn fetch(&mut self) -> Option<(FlowMapSpec, FlowMap)> {
+        self.current.take()
     }
 }
 
