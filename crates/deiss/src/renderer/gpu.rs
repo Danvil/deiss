@@ -11,20 +11,11 @@ impl Gpu {
     pub async fn new() -> Result<Self> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
 
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await?;
+        let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
 
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await?;
+        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
 
-        Ok(Self {
-            instance,
-            adapter,
-            device,
-            queue,
-        })
+        Ok(Self { instance, adapter, device, queue })
     }
 
     pub fn instance(&self) -> &wgpu::Instance {

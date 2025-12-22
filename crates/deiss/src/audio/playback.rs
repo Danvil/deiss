@@ -105,11 +105,7 @@ impl Playback {
         let sink =
             Sink::try_new(&stream_handle).map_err(|e| eyre!("Failed to create sink: {}", e))?;
 
-        Ok(Self {
-            _stream: stream,
-            sink,
-            listener: None,
-        })
+        Ok(Self { _stream: stream, sink, listener: None })
     }
 
     /// Sets an audio listener to receive samples during playback

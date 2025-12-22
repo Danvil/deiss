@@ -20,10 +20,7 @@ pub struct DeissApp {
 
 impl DeissApp {
     pub fn new(config: Config) -> Self {
-        DeissApp {
-            config: SharedConfig::new(config),
-            state: None,
-        }
+        DeissApp { config: SharedConfig::new(config), state: None }
     }
 
     fn resumed_impl(&mut self, event_loop: &ActiveEventLoop) -> Result<()> {
@@ -97,15 +94,7 @@ impl State {
         log::info!("Now playing: {filename}");
         playback.play(&filename)?;
 
-        Ok(Self {
-            gpu,
-            window,
-            surface,
-            renderer,
-            config,
-            playback,
-            painter,
-        })
+        Ok(Self { gpu, window, surface, renderer, config, playback, painter })
     }
 
     pub fn window(&self) -> &Window {
@@ -121,10 +110,8 @@ impl State {
             self.playback.play(&self.config.lock().filename).unwrap();
         }
 
-        let (surface_texture, texture_view) = self
-            .surface
-            .texture()
-            .expect("failed to acquire next swapchain texture");
+        let (surface_texture, texture_view) =
+            self.surface.texture().expect("failed to acquire next swapchain texture");
 
         self.painter.lock().unwrap().on_render();
 

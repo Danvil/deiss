@@ -76,12 +76,7 @@ impl FlowMapWorker {
             FlowMapWorkerThread::new(tx_worker_reply, rx_worker_request).run();
         });
 
-        Self {
-            tx_worker_request,
-            rx_worker_reply,
-            state,
-            handle: Some(handle),
-        }
+        Self { tx_worker_request, rx_worker_reply, state, handle: Some(handle) }
     }
 
     pub fn is_idle(&self) -> bool {
@@ -94,8 +89,7 @@ impl FlowMapWorker {
     pub fn start(&mut self, spec: FlowMapSpec) -> Result<()> {
         match self.state {
             FlowMapWorkerState::Idle => {
-                self.tx_worker_request
-                    .send(FlowMapWorkerRequest::Start(spec))?;
+                self.tx_worker_request.send(FlowMapWorkerRequest::Start(spec))?;
                 self.state = FlowMapWorkerState::Computing;
                 Ok(())
             }
@@ -120,9 +114,7 @@ impl FlowMapWorker {
     }
 
     pub fn terminate(&mut self) {
-        self.tx_worker_request
-            .send(FlowMapWorkerRequest::Terminate)
-            .ok();
+        self.tx_worker_request.send(FlowMapWorkerRequest::Terminate).ok();
         if let Some(h) = self.handle.take() {
             h.join().ok();
         }
@@ -153,10 +145,7 @@ impl FlowMapWorkerThread {
         tx_worker_reply: mpsc::Sender<FlowMapWorkerReply>,
         rx_worker_request: mpsc::Receiver<FlowMapWorkerRequest>,
     ) -> Self {
-        Self {
-            tx_worker_reply,
-            rx_worker_request,
-        }
+        Self { tx_worker_reply, rx_worker_request }
     }
 
     pub fn run(self) {
@@ -165,9 +154,7 @@ impl FlowMapWorkerThread {
                 Ok(FlowMapWorkerRequest::Start(spec)) => {
                     let mut fxgen = FlowMapGen::new(spec);
                     let fx = fxgen.run();
-                    self.tx_worker_reply
-                        .send(FlowMapWorkerReply::Finished(fx))
-                        .unwrap();
+                    self.tx_worker_reply.send(FlowMapWorkerReply::Finished(fx)).unwrap();
                 }
                 Ok(FlowMapWorkerRequest::Terminate) => break,
                 Err(mpsc::TryRecvError::Empty) => continue,

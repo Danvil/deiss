@@ -28,10 +28,7 @@ impl<T> Image<T> {
     where
         T: Copy,
     {
-        Self {
-            shape,
-            buffer: vec![value; shape.len()],
-        }
+        Self { shape, buffer: vec![value; shape.len()] }
     }
 
     pub fn shape(&self) -> Shape2 {
@@ -46,8 +43,8 @@ impl<T> Image<T> {
         self.shape.rows()
     }
 
-    pub fn offset(&self, (i, j): (u32, u32)) -> usize {
-        (i * self.shape.cols() + j) as usize
+    pub fn offset(&self, coo: (u32, u32)) -> usize {
+        self.shape.offset(coo)
     }
 
     pub fn as_slice(&self) -> &[T] {

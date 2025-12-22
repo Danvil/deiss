@@ -19,12 +19,7 @@ impl Surface {
         let cap = surface.get_capabilities(device.adapter());
         let format = cap.formats[0];
 
-        let out = Surface {
-            device,
-            surface,
-            format,
-            size,
-        };
+        let out = Surface { device, surface, format, size };
 
         out.configure();
 
@@ -47,12 +42,10 @@ impl Surface {
     pub fn texture(&self) -> Result<(wgpu::SurfaceTexture, wgpu::TextureView)> {
         let surface_texture = self.surface.get_current_texture()?;
 
-        let texture_view = surface_texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor {
-                format: Some(self.format.add_srgb_suffix()),
-                ..Default::default()
-            });
+        let texture_view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor {
+            format: Some(self.format.add_srgb_suffix()),
+            ..Default::default()
+        });
 
         Ok((surface_texture, texture_view))
     }
@@ -69,7 +62,6 @@ impl Surface {
             present_mode: wgpu::PresentMode::AutoVsync,
         };
 
-        self.surface
-            .configure(&self.device.device(), &surface_config);
+        self.surface.configure(&self.device.device(), &surface_config);
     }
 }

@@ -16,94 +16,89 @@ impl Renderer {
         let fragment_shader_src = include_str!("tonemap.wgsl");
         let source = format!("{vertex_shader_src}\n{fragment_shader_src}");
 
-        let shader = gpu
-            .device()
-            .create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("Image Blit Shader"),
-                source: wgpu::ShaderSource::Wgsl(source.into()),
-            });
+        let shader = gpu.device().create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Image Blit Shader"),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        });
 
         let bind_group_layout =
-            gpu.device()
-                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    entries: &[
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                multisampled: false,
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            },
-                            count: None,
+            gpu.device().create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 1,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                            count: None,
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
                         },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 2,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Buffer {
-                                ty: wgpu::BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: None,
-                            },
-                            count: None,
-                        },
-                    ],
-                    label: Some("texture_bind_group_layout"),
-                });
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
 
         let render_pipeline_layout =
-            gpu.device()
-                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                    label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&bind_group_layout],
-                    immediate_size: 0,
-                });
+            gpu.device().create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[&bind_group_layout],
+                immediate_size: 0,
+            });
 
         let render_pipeline =
-            gpu.device()
-                .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some("Image Blit Pipeline"),
-                    layout: Some(&render_pipeline_layout),
-                    vertex: wgpu::VertexState {
-                        module: &shader,
-                        entry_point: Some("vs_main"),
-                        buffers: &[],
-                        compilation_options: Default::default(),
-                    },
-                    fragment: Some(wgpu::FragmentState {
-                        module: &shader,
-                        entry_point: Some("fs_main"),
-                        targets: &[Some(wgpu::ColorTargetState {
-                            format: wgpu::TextureFormat::Bgra8UnormSrgb,
-                            blend: Some(wgpu::BlendState::REPLACE),
-                            write_mask: wgpu::ColorWrites::ALL,
-                        })],
-                        compilation_options: Default::default(),
-                    }),
-                    primitive: wgpu::PrimitiveState {
-                        topology: wgpu::PrimitiveTopology::TriangleList,
-                        strip_index_format: None,
-                        front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: Some(wgpu::Face::Back),
-                        polygon_mode: wgpu::PolygonMode::Fill,
-                        unclipped_depth: false,
-                        conservative: false,
-                    },
-                    depth_stencil: None,
-                    multisample: wgpu::MultisampleState {
-                        count: 1,
-                        mask: !0,
-                        alpha_to_coverage_enabled: false,
-                    },
-                    multiview_mask: None,
-                    cache: None,
-                });
+            gpu.device().create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Image Blit Pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: Some("vs_main"),
+                    buffers: &[],
+                    compilation_options: Default::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: Some("fs_main"),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        blend: Some(wgpu::BlendState::REPLACE),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                    compilation_options: Default::default(),
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    strip_index_format: None,
+                    front_face: wgpu::FrontFace::Ccw,
+                    cull_mode: Some(wgpu::Face::Back),
+                    polygon_mode: wgpu::PolygonMode::Fill,
+                    unclipped_depth: false,
+                    conservative: false,
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+                multiview_mask: None,
+                cache: None,
+            });
 
         let sampler = gpu.device().create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -115,11 +110,7 @@ impl Renderer {
             ..Default::default()
         });
 
-        Self {
-            render_pipeline,
-            bind_group_layout,
-            sampler,
-        }
+        Self { render_pipeline, bind_group_layout, sampler }
     }
 
     pub fn render(
@@ -129,11 +120,8 @@ impl Renderer {
         surface_shape: Shape2,
         image: &RgbaImage,
     ) {
-        let texture_size = wgpu::Extent3d {
-            width: image.cols(),
-            height: image.rows(),
-            depth_or_array_layers: 1,
-        };
+        let texture_size =
+            wgpu::Extent3d { width: image.cols(), height: image.rows(), depth_or_array_layers: 1 };
 
         let texture = gpu.device().create_texture(&wgpu::TextureDescriptor {
             size: texture_size,
@@ -171,13 +159,11 @@ impl Renderer {
             surface_shape.cols() as f32, // surface_width
             surface_shape.rows() as f32, // surface_height
         ];
-        let uniform_buffer = gpu
-            .device()
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Aspect Ratio Uniform Buffer"),
-                contents: bytemuck::cast_slice(&uniform_data),
-                usage: wgpu::BufferUsages::UNIFORM,
-            });
+        let uniform_buffer = gpu.device().create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Aspect Ratio Uniform Buffer"),
+            contents: bytemuck::cast_slice(&uniform_data),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
 
         let bind_group = gpu.device().create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &self.bind_group_layout,
@@ -190,10 +176,7 @@ impl Renderer {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&self.sampler),
                 },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: uniform_buffer.as_entire_binding(),
-                },
+                wgpu::BindGroupEntry { binding: 2, resource: uniform_buffer.as_entire_binding() },
             ],
             label: Some("texture_bind_group"),
         });

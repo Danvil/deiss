@@ -23,11 +23,7 @@ pub struct AudioSamples {
 
 impl AudioSamples {
     pub fn new(samples: Vec<u16>, sample_rate: u32, channels: u16) -> Self {
-        AudioSamples {
-            samples,
-            sample_rate,
-            channels,
-        }
+        AudioSamples { samples, sample_rate, channels }
     }
 
     pub fn samples(&self) -> &[u16] {
