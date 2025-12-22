@@ -11,15 +11,13 @@ pub struct TwoChasers {
 
 impl TwoChasers {
     pub fn new(center: Vec2i32, passes: usize, s: &Settings, g: &Globals) -> Self {
-        let time_scale = if 10. <= g.fps_at_last_mode_switch && g.fps_at_last_mode_switch < 120. {
-            30. / g.fps_at_last_mode_switch
-        } else {
-            1.
-        };
-
-        let frame = g.floatframe + g.chaser_offset;
-
-        Self { y_roi: s.y_roi, center, passes, frame: frame * time_scale, time_scale }
+        Self {
+            y_roi: s.y_roi,
+            center,
+            passes,
+            frame: (g.floatframe + g.chaser_offset) * g.time_scale,
+            time_scale: g.time_scale,
+        }
     }
 }
 

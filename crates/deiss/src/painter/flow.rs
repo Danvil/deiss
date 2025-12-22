@@ -31,13 +31,8 @@ impl FlowMapSpec {
         let gyc = ((s.fxh / 2 - 1) as f32 + g.rand.next_idx(30) as f32 - 15.) as i32;
 
         let damping = g.suggested_dampening.clamp(0.50, 1.00)
-            * if fx[mode].motion_dampened { 0.5 } else { 1.0 };
-
-        let damping_tmp = if 10. <= g.fps_at_last_mode_switch && g.fps_at_last_mode_switch <= 120. {
-            damping * 30. / g.fps_at_last_mode_switch
-        } else {
-            damping
-        };
+            * if fx[mode].motion_dampened { 0.5 } else { 1.0 }
+            * g.time_scale;
 
         let waveform = pick_compatible_waveform(mode, &mut g.rand);
 
@@ -51,7 +46,7 @@ impl FlowMapSpec {
             mode,
             waveform,
             center: Vec2i32::new(gxc, gyc),
-            damping: damping_tmp,
+            damping,
             tf,
         }
     }

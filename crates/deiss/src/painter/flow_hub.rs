@@ -39,6 +39,7 @@ impl FlowMapHub {
                 self.worker.start(spec)?;
                 self.next_switch_time = Instant::now() + Duration::from_secs(3);
                 g.fps_at_last_mode_switch = g.fps.reset();
+                g.time_scale = 30. / g.fps_at_last_mode_switch.clamp(10., 120.);
             }
         } else {
             if let Some(map) = self.worker.retreive()? {

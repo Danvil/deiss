@@ -1,6 +1,6 @@
 use crate::{
     audio::{AudioListener, AudioSamples},
-    fx::*,
+    fx::{self, Effect},
     painter::*,
     utils::*,
 };
@@ -24,6 +24,8 @@ impl Painter {
 
         let mut globals = Globals::default();
         globals.chaser_offset = globals.rand.next_idx(40_000) as f32;
+        globals.fps_at_last_mode_switch = 30.;
+        globals.time_scale = 1.;
 
         let (fxh, fxw) = shape.into();
 
@@ -79,36 +81,44 @@ impl Painter {
             self.needs_init = false;
 
             if spec.mode == ModeId(1) && self.globals.rand.next_bool() {
-                SolarParticles { center: (spec.center.x as i32, spec.center.y as i32), count: 500 }
-                    .render(&mut self.img, &mut self.globals.rand);
+                fx::SolarParticles {
+                    center: (spec.center.x as i32, spec.center.y as i32),
+                    count: 500,
+                }
+                .render(&mut self.img, &mut self.globals.rand);
             }
         }
 
         if spec.effects[EffectKind::Shade] {
             // println!(" >> ShadeBobs");
-            ShadeBobs::new(spec.center, self.globals.floatframe, &mut self.globals.rand)
+            fx::ShadeBobs::new(spec.center, self.globals.floatframe, &mut self.globals.rand)
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
         if spec.effects[EffectKind::Chasers] {
-            TwoChasers::new(spec.center, 2, &self.settings, &self.globals)
+            fx::TwoChasers::new(spec.center, 2, &self.settings, &self.globals)
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
         if spec.effects[EffectKind::Bar] {
-            SnackBar::new(spec.center, &self.settings, &self.globals)
+            fx::SnackBar::new(spec.center, &self.settings, &self.globals)
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
         if spec.effects[EffectKind::Dots] {
-            OneDottyChaser::new(spec.center, &self.settings, &self.globals)
+            fx::OneDottyChaser::new(spec.center, &self.settings, &self.globals)
+                .render(&mut self.img, &mut self.globals.rand);
+        }
+
+        if spec.effects[EffectKind::Grid] {
+            fx::Grid::new(&self.settings, &self.globals)
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
         process_map(&self.settings, fx.as_slice(), &self.img, &mut self.next);
         mem::swap(&mut self.img, &mut self.next);
 
-        if let Some(fx) = Dots::new(&spec, &self.settings, &mut self.globals) {
+        if let Some(fx) = fx::Dots::new(&spec, &self.settings, &mut self.globals) {
             // println!(" >> Dots");
             fx.render(&mut self.img, &mut self.globals.rand);
         }

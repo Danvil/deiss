@@ -11,13 +11,12 @@ pub struct OneDottyChaser {
 
 impl OneDottyChaser {
     pub fn new(center: Vec2i32, s: &Settings, g: &Globals) -> Self {
-        let time_scale = if 10. <= g.fps_at_last_mode_switch && g.fps_at_last_mode_switch < 120. {
-            30. / g.fps_at_last_mode_switch
-        } else {
-            1.
-        };
-
-        Self { y_roi: s.y_roi, center, time: g.floatframe * time_scale, chasers: g.chasers.clone() }
+        Self {
+            y_roi: s.y_roi,
+            center,
+            time: g.floatframe * g.time_scale,
+            chasers: g.chasers.clone(),
+        }
     }
 }
 

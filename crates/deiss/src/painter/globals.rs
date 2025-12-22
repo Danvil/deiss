@@ -21,6 +21,7 @@ pub struct Globals {
     pub fourier: RunningFourier,
     pub fps: Fps,
     pub fps_at_last_mode_switch: f32,
+    pub time_scale: f32,
     pub big_beat_threshold: f32,
     pub chaser_offset: f32,
     pub chasers: Arc<Mutex<Chasers>>,
