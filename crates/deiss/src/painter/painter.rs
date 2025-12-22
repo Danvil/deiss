@@ -1,6 +1,7 @@
 use crate::{
     audio::{AudioListener, AudioSamples},
-    effects::*,
+    fx::*,
+    painter::*,
     utils::*,
 };
 use std::{f32, mem};

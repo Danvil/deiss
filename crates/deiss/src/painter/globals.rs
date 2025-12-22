@@ -1,4 +1,4 @@
-use crate::{effects::*, utils::Minstd};
+use crate::{painter::*, utils::Minstd};
 use std::time::Instant;
 
 #[derive(Debug, Default)]

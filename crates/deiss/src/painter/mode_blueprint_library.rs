@@ -1,4 +1,4 @@
-use crate::{effects::*, utils::Minstd};
+use crate::{painter::*, utils::Minstd};
 use core::ops;
 use std::collections::HashMap;
 

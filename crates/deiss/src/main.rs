@@ -1,7 +1,8 @@
 pub mod audio;
 pub mod config;
 mod deiss_app;
-pub mod effects;
+pub mod fx;
+pub mod painter;
 pub mod renderer;
 pub mod utils;
 

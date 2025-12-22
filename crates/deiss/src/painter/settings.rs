@@ -1,4 +1,4 @@
-use crate::{effects::*, utils::*};
+use crate::{painter::*, utils::*};
 
 #[derive(Debug, Clone)]
 pub struct Settings {

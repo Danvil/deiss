@@ -1,7 +1,7 @@
 use crate::{
     audio::Playback,
     config::{Config, SharedConfig},
-    effects::Painter,
+    painter::Painter,
     renderer::{Gpu, Renderer, Surface},
 };
 use eyre::Result;

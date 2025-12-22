@@ -1,5 +1,5 @@
 use crate::{
-    effects::{
+    painter::{
         flow::{FlowMap, FlowMapGen, FlowMapSpec, FxPxl},
         globals::Globals,
         mode_blueprint_library::ModeBlueprintLibrary,

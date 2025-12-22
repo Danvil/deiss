@@ -1,4 +1,4 @@
-use crate::{effects::*, utils::*};
+use crate::{painter::*, utils::*};
 
 #[derive(Clone, Copy, Default)]
 pub struct FxPxl {
