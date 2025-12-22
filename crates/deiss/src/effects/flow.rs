@@ -14,7 +14,7 @@ pub struct FlowMapSpec {
     pub effects: Effects,
     pub mode: ModeId,
     pub waveform: u32,
-    pub center: Vec2,
+    pub center: Vec2i32,
     pub damping: f32,
     pub tf: AnyTransform,
 }
@@ -27,8 +27,8 @@ impl FlowMapSpec {
         let effects =
             fx[mode].effect_freq.sample((effects_min as usize, effects_max as usize), &mut g.rand);
 
-        let gxc = (s.fxw / 2 - 1) as f32 + g.rand.next_idx(60) as f32 - 30.;
-        let gyc = (s.fxh / 2 - 1) as f32 + g.rand.next_idx(30) as f32 - 15.;
+        let gxc = ((s.fxw / 2 - 1) as f32 + g.rand.next_idx(60) as f32 - 30.) as i32;
+        let gyc = ((s.fxh / 2 - 1) as f32 + g.rand.next_idx(30) as f32 - 15.) as i32;
 
         let damping = g.suggested_dampening.clamp(0.50, 1.00)
             * if fx[mode].motion_dampened { 0.5 } else { 1.0 };
@@ -50,7 +50,7 @@ impl FlowMapSpec {
             effects,
             mode,
             waveform,
-            center: Vec2::new(gxc, gyc),
+            center: Vec2i32::new(gxc, gyc),
             damping: damping_tmp,
             tf,
         }
@@ -73,20 +73,17 @@ fn pick_compatible_waveform(mode: ModeId, rand: &mut Minstd) -> u32 {
 
 pub struct FlowMapGen {
     spec: FlowMapSpec,
-    y_map_pos: u32,
 }
 
 const NUM_WAVES: u32 = 6;
 
 impl FlowMapGen {
     pub fn new(spec: FlowMapSpec) -> Self {
-        FlowMapGen { spec, y_map_pos: 0 }
+        FlowMapGen { spec }
     }
 
     pub fn run(&mut self) -> FlowMap {
-        let s = &self.spec.settings;
-        self.y_map_pos = s.fx_ycut * s.fxw;
-        bake(s, self.spec.center, self.spec.damping, &self.spec.tf)
+        bake(&self.spec.settings, self.spec.center.cast(), self.spec.damping, &self.spec.tf)
     }
 }
 
@@ -143,10 +140,8 @@ pub fn process_map(s: &Settings, fx: &[FxPxl], src: &RgbaImage, dst: &mut RgbaIm
     let src = src.as_slice();
     let dst = dst.as_slice_mut();
 
-    let fx_ycut_num_lines = s.fxw * (s.fxh - s.fx_ycut * 2);
-
-    let idx0 = (s.fxw * s.fx_ycut) as usize;
-    let idx1 = idx0 + fx_ycut_num_lines as usize;
+    let idx0 = (s.fxw * s.y_roi.min) as usize;
+    let idx1 = (s.fxw * s.y_roi.max) as usize;
 
     for idx in idx0..idx1 {
         let FxPxl { weights, index } = fx[idx];

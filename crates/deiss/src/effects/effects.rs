@@ -80,7 +80,7 @@ impl ops::IndexMut<EffectKind> for EffectFreq {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Effects([bool; NUM_EFFECTS]);
 
 impl Effects {
@@ -182,7 +182,7 @@ fn sample_disk(r: u32, rand: &mut Minstd) -> ((i32, i32), u32) {
 
 pub struct Dots {
     pub nodes: u32,
-    pub center: Vec2,
+    pub center: Vec2i32,
     pub phase: f32,
     pub r: f32,
     pub rad: f32,
@@ -213,7 +213,7 @@ impl Dots {
         };
 
         let col = if s.disp_bits > 8 {
-            let i = (g.frame + s.chaser_offset as u64) as f32;
+            let i = g.frame as f32 + g.chaser_offset;
             let f = 7. * (i * 0.007 + 29.).sin() + 5. * (i * 0.0057 + 27.).cos();
             [
                 0.58 + 0.21 * (i * s.gf[0] + 20. - f).sin() + 0.21 * (i * s.gf[3] + 17. + f).cos(),
@@ -229,12 +229,12 @@ impl Dots {
 }
 
 impl Effect for Dots {
-    fn render(&self, img: &mut RgbaImage, rand: &mut Minstd) {
+    fn render(&self, img: &mut RgbaImage, _: &mut Minstd) {
         for n in 0..self.nodes {
             let (th_cos, th_sin) =
                 ((n as f32) / (self.nodes as f32) * f32::consts::TAU + self.phase).sin_cos();
-            let cx = (self.center.x + self.rad * th_cos) as i32;
-            let cy = (self.center.y + self.rad * th_sin) as i32;
+            let cx = self.center.x + (self.rad * th_cos) as i32;
+            let cy = self.center.y + (self.rad * th_sin) as i32;
 
             for y in -10..=10 {
                 for x in -10..=10 {
@@ -257,7 +257,7 @@ fn rgba_scl_add_inpl(v: &mut Rgba, scl: f32, d: [f32; 3]) {
 
 pub struct ShadeBobs {
     pub count: usize,
-    pub center: Vec2,
+    pub center: Vec2i32,
     pub floatframe: f32,
     pub micro_c: [[f32; 3]; 10],
     pub micro_f: [[f32; 4]; 10],
@@ -265,7 +265,7 @@ pub struct ShadeBobs {
 }
 
 impl ShadeBobs {
-    pub fn new(center: Vec2, floatframe: f32, rand: &mut Minstd) -> Self {
+    pub fn new(center: Vec2i32, floatframe: f32, rand: &mut Minstd) -> Self {
         let mut micro_c = [[0.; 3]; 10];
         let mut micro_f = [[0.; 4]; 10];
         let mut micro_rad = [[0.; 4]; 10];
@@ -297,17 +297,17 @@ impl Effect for ShadeBobs {
                 (1. + (self.floatframe * self.micro_c[x][c]).sin()) as u32
             });
 
-            let mut a = (self.center.x
-                + self.micro_rad[x][0] * (self.floatframe * self.micro_f[x][0]).cos()
-                + self.micro_rad[x][2] * (self.floatframe * self.micro_f[x][1]).cos())
-                as i32;
+            let mut a = self.center.x
+                + (self.micro_rad[x][0] * (self.floatframe * self.micro_f[x][0]).cos()
+                    + self.micro_rad[x][2] * (self.floatframe * self.micro_f[x][1]).cos())
+                    as i32;
 
-            let mut b = (self.center.y
-                + self.micro_rad[x][1] * (self.floatframe * self.micro_f[x][2]).cos()
-                + self.micro_rad[x][3] * (self.floatframe * self.micro_f[x][3]).cos())
-                as i32;
+            let mut b = self.center.y
+                + (self.micro_rad[x][1] * (self.floatframe * self.micro_f[x][2]).cos()
+                    + self.micro_rad[x][3] * (self.floatframe * self.micro_f[x][3]).cos())
+                    as i32;
 
-            for k in 0..4 {
+            for _ in 0..4 {
                 a += rand.next_idx(5) as i32 - 2;
                 b += rand.next_idx(5) as i32 - 2;
 
@@ -327,6 +327,68 @@ impl Effect for ShadeBobs {
                 pxls[idx - 1].sat_add_u8_3(delta[1]);
                 pxls[idx + cols].sat_add_u8_3(delta[1]);
                 pxls[idx - cols].sat_add_u8_3(delta[1]);
+            }
+        }
+    }
+}
+
+pub struct TwoChasers {
+    pub y_roi: YRoi,
+    pub center: Vec2i32,
+    pub passes: usize,
+    pub frame: f32,
+    pub time_scale: f32,
+}
+
+impl TwoChasers {
+    pub fn new(center: Vec2i32, passes: usize, s: &Settings, g: &Globals) -> Self {
+        let time_scale = if 10. <= g.fps_at_last_mode_switch && g.fps_at_last_mode_switch < 120. {
+            30. / g.fps_at_last_mode_switch
+        } else {
+            1.
+        };
+
+        let frame = g.floatframe + g.chaser_offset;
+
+        Self { y_roi: s.y_roi, center, passes, frame: frame * time_scale, time_scale }
+    }
+}
+
+impl Effect for TwoChasers {
+    fn render(&self, img: &mut RgbaImage, _: &mut Minstd) {
+        let s = img.cols() as f32 / 640.;
+        let n = (20. * s) as usize;
+
+        let mut t = self.frame;
+        for _ in 0..n {
+            t += 0.08 * self.time_scale * 20. / n as f32;
+
+            for pass in 0..self.passes {
+                let delta = if pass == 0 {
+                    Vec2::new(
+                        74. * (t * 0.1102 + 10.).cos() + 65. * (t * 0.1312 + 20.).cos(),
+                        54. * (t * 0.1204 + 40.).cos() + 55. * (t * 0.1715 + 30.).cos(),
+                    )
+                } else {
+                    Vec2::new(
+                        64. * (t * 0.1213 + 33.).cos() + 55. * (t * 0.1408 + 15.).cos(),
+                        52. * (t * 0.1304 + 12.).cos() + 51. * (t * 0.1103 + 21.).cos(),
+                    )
+                };
+                let p = self.center + (delta * s).cast();
+
+                let coo = (p.y as u32, p.x as u32);
+
+                if self.y_roi.contains(coo.0) {
+                    let col = &mut img[coo];
+
+                    *col = Rgba([
+                        255 - ((255 - col[0]) as f32 * 0.6) as u8,
+                        255 - ((255 - col[1]) as f32 * 0.6) as u8,
+                        255 - ((255 - col[2]) as f32 * 0.6) as u8,
+                        255,
+                    ]);
+                }
             }
         }
     }

@@ -6,9 +6,8 @@ pub struct Settings {
     pub enable_map_dampening: bool,
     pub fxw: u32,
     pub fxh: u32,
-    pub fx_ycut: u32,
+    pub y_roi: YRoi,
     pub disp_bits: u32,
-    pub chaser_offset: u32,
     pub gf: [f32; 6],
     pub mode_prefs: ModePrefs,
 }
@@ -16,6 +15,18 @@ pub struct Settings {
 impl Settings {
     pub fn shape(&self) -> Shape2 {
         (self.fxh, self.fxw).into()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct YRoi {
+    pub min: u32,
+    pub max: u32,
+}
+
+impl YRoi {
+    pub fn contains(&self, y: u32) -> bool {
+        self.min <= y && y <= self.max
     }
 }
 

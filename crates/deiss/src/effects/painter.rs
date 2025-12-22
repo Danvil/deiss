@@ -19,8 +19,10 @@ pub struct Painter {
 impl Painter {
     pub fn new(shape: Shape2) -> Self {
         const DISP_BIT: u32 = 32;
+        const YCUT: u32 = 90;
 
         let mut globals = Globals::default();
+        globals.chaser_offset = globals.rand.next_idx(40_000) as f32;
 
         let (fxh, fxw) = shape.into();
 
@@ -29,9 +31,8 @@ impl Painter {
             enable_map_dampening: false,
             fxw,
             fxh,
-            fx_ycut: 90,
+            y_roi: YRoi { min: YCUT, max: fxh - YCUT },
             disp_bits: DISP_BIT,
-            chaser_offset: globals.rand.next_idx(40_000),
             gf: core::array::from_fn(|_| {
                 ((globals.rand.next_idx(1000) as f32) * 0.001) * 0.01 + 0.02
             }),
@@ -64,6 +65,7 @@ impl Painter {
 
         self.fx_hub.step(&self.settings, &self.library, &mut self.globals).ok();
         if let Some(fx) = self.fx_hub.fetch() {
+            log::info!("New mode: {:?}", fx.0.effects);
             self.fx = Some(fx);
             self.needs_init = true;
         }
@@ -76,7 +78,6 @@ impl Painter {
             self.needs_init = false;
 
             if spec.mode == ModeId(1) && self.globals.rand.next_bool() {
-                // println!(" >> SolarParticles");
                 SolarParticles { center: (spec.center.x as i32, spec.center.y as i32), count: 500 }
                     .render(&mut self.img, &mut self.globals.rand);
             }
@@ -85,6 +86,11 @@ impl Painter {
         if spec.effects[EffectKind::Shade] {
             // println!(" >> ShadeBobs");
             ShadeBobs::new(spec.center, self.globals.floatframe, &mut self.globals.rand)
+                .render(&mut self.img, &mut self.globals.rand);
+        }
+
+        if spec.effects[EffectKind::Chasers] {
+            TwoChasers::new(spec.center, 2, &self.settings, &self.globals)
                 .render(&mut self.img, &mut self.globals.rand);
         }
 

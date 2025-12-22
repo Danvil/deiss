@@ -19,6 +19,7 @@ pub struct Globals {
     pub fps: Fps,
     pub fps_at_last_mode_switch: f32,
     pub big_beat_threshold: f32,
+    pub chaser_offset: f32,
 }
 
 #[derive(Debug)]

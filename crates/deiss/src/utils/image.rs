@@ -1,6 +1,5 @@
-use core::ops;
-
 use crate::utils::Shape2;
+use core::ops;
 
 #[derive(Clone)]
 pub struct Image<T> {
