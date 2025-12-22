@@ -87,17 +87,19 @@ const NUM_MODES: u32 = 25;
 
 impl ModePrefs {
     pub fn pick(&self, rng: &mut MinstdRand) -> Mode {
-        if self.total == 0 {
-            let mut m = 1 + rng.next_idx(NUM_MODES);
-            if rng.next_idx(25) == 0 {
-                m = 7;
-            }
-            if rng.next_idx(25) == 0 {
-                m = 5;
-            }
-            m.into()
-        } else {
-            todo!()
-        }
+        Mode(1 + rng.next_idx(3))
+
+        // if self.total == 0 {
+        //     let mut m = 1 + rng.next_idx(NUM_MODES);
+        //     if rng.next_idx(25) == 0 {
+        //         m = 7;
+        //     }
+        //     if rng.next_idx(25) == 0 {
+        //         m = 5;
+        //     }
+        //     m.into()
+        // } else {
+        //     todo!()
+        // }
     }
 }

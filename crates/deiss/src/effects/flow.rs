@@ -1,7 +1,7 @@
 use crate::{
     effects::{
         globals::{Globals, MinstdRand},
-        mode::{ModeKernel, TurnScaleMode},
+        mode::{AnyTransform, DitherTurnScaleTransform, PixelTransform, TurnScaleTransform},
         settings::{Mode, Settings},
     },
     utils::*,
@@ -20,7 +20,7 @@ pub struct FlowMapSpec {
     pub settings: Settings,
     pub center: Vec2,
     pub damping: f32,
-    pub mode: TurnScaleMode,
+    pub mode: AnyTransform,
 }
 
 impl FlowMapSpec {
@@ -47,12 +47,18 @@ impl FlowMapSpec {
 
         g.big_beat_threshold = 1.10; // ??
 
+        let mode = match mode {
+            Mode(1) => DitherTurnScaleTransform::mode_1(&mut g.rand).into(),
+            Mode(2) => TurnScaleTransform::mode_2(&mut g.rand).into(),
+            Mode(3) => TurnScaleTransform::mode_3(&mut g.rand).into(),
+            _ => TurnScaleTransform::from_scale_turn(1., 0.).into(),
+        };
+
         FlowMapSpec {
             settings: s.clone(),
             center: Vec2::new(gxc, gyc),
             damping: damping_tmp,
-            mode: TurnScaleMode::mode_1(&mut g.rand),
-            // mode: TurnScaleMode::from_scale_turn(0.98, 0.0),
+            mode,
         }
     }
 }
@@ -90,7 +96,7 @@ impl FlowMapGen {
     }
 }
 
-pub fn bake<M: ModeKernel>(s: &Settings, center: Vec2, damping: f32, mode: &M) -> Image<FxPxl> {
+pub fn bake<M: PixelTransform>(s: &Settings, center: Vec2, damping: f32, mode: &M) -> Image<FxPxl> {
     let s_fxw_minus_once = (s.fxw - 1) as f32;
     // let half_fxw = s.fxw as f32 * 0.5;
 
