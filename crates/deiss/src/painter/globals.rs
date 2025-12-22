@@ -1,5 +1,8 @@
-use crate::{painter::*, utils::Minstd};
-use std::time::Instant;
+use crate::{fx::Chasers, painter::*, utils::Minstd};
+use std::{
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 
 #[derive(Debug, Default)]
 pub struct Globals {
@@ -20,6 +23,7 @@ pub struct Globals {
     pub fps_at_last_mode_switch: f32,
     pub big_beat_threshold: f32,
     pub chaser_offset: f32,
+    pub chasers: Arc<Mutex<Chasers>>,
 }
 
 #[derive(Debug)]

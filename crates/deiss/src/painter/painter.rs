@@ -95,6 +95,11 @@ impl Painter {
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
+        if spec.effects[EffectKind::Dots] {
+            OneDottyChaser::new(spec.center, &self.settings, &self.globals)
+                .render(&mut self.img, &mut self.globals.rand);
+        }
+
         process_map(&self.settings, fx.as_slice(), &self.img, &mut self.next);
         mem::swap(&mut self.img, &mut self.next);
 

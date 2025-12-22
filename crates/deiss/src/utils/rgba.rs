@@ -1,7 +1,7 @@
 use crate::utils::{Image, Shape2};
 use core::ops;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Rgba(pub [u8; 4]);
 
 impl Rgba {
