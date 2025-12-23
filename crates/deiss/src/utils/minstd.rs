@@ -10,6 +10,14 @@ impl Default for Minstd {
 }
 
 impl Minstd {
+    pub fn from_seed(seed: u64) -> Self {
+        let mut out = Self { u: seed.saturating_add(1) };
+        for i in 0..8 {
+            out.next();
+        }
+        out
+    }
+
     pub fn next(&mut self) -> u32 {
         self.u = (self.u * 48_271) % 2_147_483_647;
         self.u as u32

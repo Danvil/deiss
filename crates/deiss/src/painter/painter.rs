@@ -42,7 +42,7 @@ impl Painter {
             mode_prefs: ModePrefs::new(),
         };
 
-        let library = ModeBlueprintLibrary::new(DISP_BIT, &mut globals);
+        let library = ModeBlueprintLibrary::new(&mut globals);
 
         Self {
             img: RgbaImage::black(shape),
@@ -68,7 +68,7 @@ impl Painter {
 
         self.fx_hub.step(&self.settings, &self.library, &mut self.globals).ok();
         if let Some(fx) = self.fx_hub.fetch() {
-            log::info!("New mode: {:?}", fx.0.effects);
+            log::info!("New mode: {:?} {:?}", fx.0.mode, fx.0.effects);
             self.fx = Some(fx);
             self.needs_init = true;
         }

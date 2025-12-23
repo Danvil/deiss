@@ -47,7 +47,15 @@ const NUM_MODES: u32 = 25;
 
 impl ModePrefs {
     pub fn pick(&self, rng: &mut Minstd) -> ModeId {
-        ModeId(1 + rng.next_idx(3))
+        // ModeId(9)
+
+        loop {
+            let m = ModeId(1 + rng.next_idx(9));
+            if m == ModeId(6) {
+                continue;
+            }
+            return m;
+        }
 
         // if self.total == 0 {
         //     let mut m = 1 + rng.next_idx(NUM_MODES);

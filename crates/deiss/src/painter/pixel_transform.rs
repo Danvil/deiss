@@ -1,28 +1,11 @@
 use crate::utils::*;
 
+/// Pixel coordinate transformation mainly used for motion fields
 pub trait PixelTransform {
     fn transform(&self, p: Vec2) -> Vec2;
 }
 
-#[derive(Debug, Clone)]
-pub struct Rot2 {
-    sin: f32,
-    cos: f32,
-}
-
-impl Rot2 {
-    pub fn from_angle(angle: f32) -> Self {
-        let (sin, cos) = angle.sin_cos();
-        Self { sin, cos }
-    }
-
-    pub fn transform(&self, p: Vec2) -> Vec2 {
-        let x = p.x * self.cos - p.y * self.sin;
-        let y = p.x * self.sin + p.y * self.cos;
-        Vec2::new(x, y)
-    }
-}
-
+/// Pixel transformation which rotates and then scales
 #[derive(Debug, Clone)]
 pub struct TurnScaleTransform {
     scale: f32,
@@ -44,18 +27,6 @@ impl TurnScaleTransform {
     pub fn from_scale_turn(scale: f32, turn: f32) -> Self {
         Self { scale, turn, rot: Rot2::from_angle(turn) }
     }
-
-    pub fn mode_2(rand: &mut Minstd) -> Self {
-        let scale = 1.00 - 0.02 * rand.next_01_prom();
-        let turn = 0.02 + 0.07 * rand.next_01_prom();
-        Self::from_scale_turn_raw(scale, turn, rand)
-    }
-
-    pub fn mode_3(rand: &mut Minstd) -> Self {
-        let scale = 0.85 + 0.10 * rand.next_01_prom();
-        let turn = 0.01 + 0.015 * rand.next_01_prom();
-        Self::from_scale_turn_raw(scale, turn, rand)
-    }
 }
 
 impl PixelTransform for TurnScaleTransform {
@@ -64,6 +35,7 @@ impl PixelTransform for TurnScaleTransform {
     }
 }
 
+/// TODO
 #[derive(Debug, Clone)]
 pub struct DitherTurnScaleTransform {
     parts: [TurnScaleTransform; 2],
@@ -88,20 +60,6 @@ impl DitherTurnScaleTransform {
             TurnScaleTransform::from_scale_turn(scale[1], turn[1]),
         ])
     }
-
-    pub fn mode_1(rand: &mut Minstd) -> Self {
-        let scale1 = 0.985 - 0.12 * rand.next_01_prom().powi(2);
-        let scale2 = scale1;
-
-        let mut turn1 = 0.01 + 0.01 * rand.next_01_prom();
-        let turn2 = turn1;
-
-        if rand.next() % 3 == 1 {
-            turn1 *= -1.;
-        }
-
-        Self::from_scale_turn_raw([scale1, scale2], [turn1, turn2], rand)
-    }
 }
 
 impl PixelTransform for DitherTurnScaleTransform {
@@ -114,29 +72,36 @@ impl PixelTransform for DitherTurnScaleTransform {
     }
 }
 
+/// Turn-Scale transformation with scale dependent on the pixel coordinate
 #[derive(Debug, Clone)]
-pub enum AnyTransform {
-    TurnScale(TurnScaleTransform),
-    DitherTurnScale(DitherTurnScaleTransform),
+pub struct TurnVarScaleTf<S> {
+    turn: f32,
+    rot: Rot2,
+    scale_f: S,
 }
 
-impl PixelTransform for AnyTransform {
-    fn transform(&self, p: Vec2) -> Vec2 {
-        match self {
-            AnyTransform::TurnScale(mode) => mode.transform(p),
-            AnyTransform::DitherTurnScale(mode) => mode.transform(p),
+impl<S> TurnVarScaleTf<S> {
+    pub fn new_raw(mut turn: f32, scale_f: S, rand: &mut Minstd) -> Self {
+        if rand.next_bool() {
+            turn *= -1.;
         }
+
+        turn *= 0.6;
+
+        Self { turn, rot: Rot2::from_angle(turn), scale_f }
     }
 }
 
-impl Into<AnyTransform> for TurnScaleTransform {
-    fn into(self) -> AnyTransform {
-        AnyTransform::TurnScale(self)
+impl<S> PixelTransform for TurnVarScaleTf<S>
+where
+    S: ScaleF,
+{
+    fn transform(&self, p: Vec2) -> Vec2 {
+        self.rot.transform(p) * self.scale_f.scale(p)
     }
 }
 
-impl Into<AnyTransform> for DitherTurnScaleTransform {
-    fn into(self) -> AnyTransform {
-        AnyTransform::DitherTurnScale(self)
-    }
+/// Coordinate-dependent scale function used by [TurnVarScaleTf]
+pub trait ScaleF {
+    fn scale(&self, p: Vec2) -> f32;
 }

@@ -23,6 +23,12 @@ impl<K> Vec2K<K> {
     }
 }
 
+impl Vec2K<f32> {
+    pub fn norm(&self) -> f32 {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
+}
+
 pub trait CoeffCast<S> {
     fn cast(self) -> S;
 }
