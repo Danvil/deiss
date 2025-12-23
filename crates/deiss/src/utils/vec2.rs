@@ -24,8 +24,12 @@ impl<K> Vec2K<K> {
 }
 
 impl Vec2K<f32> {
+    pub fn norm_squared(&self) -> f32 {
+        self.x * self.x + self.y * self.y
+    }
+
     pub fn norm(&self) -> f32 {
-        (self.x * self.x + self.y * self.y).sqrt()
+        self.norm_squared().sqrt()
     }
 }
 
@@ -75,5 +79,15 @@ where
 
     fn add(self, other: Vec2K<K>) -> Vec2K<K> {
         Vec2K { x: self.x + other.x, y: self.y + other.y }
+    }
+}
+
+impl<K> ops::AddAssign for Vec2K<K>
+where
+    K: Copy + ops::AddAssign<K>,
+{
+    fn add_assign(&mut self, other: Vec2K<K>) {
+        self.x += other.x;
+        self.y += other.y;
     }
 }

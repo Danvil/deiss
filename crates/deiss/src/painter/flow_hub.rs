@@ -128,6 +128,7 @@ enum FlowMapWorkerState {
     Computing,
 }
 
+#[allow(clippy::large_enum_variant)]
 enum FlowMapWorkerRequest {
     Start(FlowMapSpec),
     Terminate,

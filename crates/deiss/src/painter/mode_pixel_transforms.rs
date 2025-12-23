@@ -1,7 +1,7 @@
 use crate::{
     painter::{
         CenterTransform, DitherTurnScaleTransform, GeneralPixelTransform, ScaleF,
-        TurnScaleTransform, TurnVarScaleTransform,
+        TurnScaleTransform, TurnVarScaleTransform, YRoi,
     },
     utils::*,
 };
@@ -124,6 +124,70 @@ impl ScaleF for Mode5Scale {
     }
 }
 
+// === Mode 6
+
+/// Mode 6 uses custom motion vectors
+#[derive(Debug, Clone)]
+pub struct Mode6Tf {
+    c: [Vec2; 5],
+    ctype: [u32; 5],
+    c0: [Vec2; 5],
+}
+
+impl GeneralPixelTransform for Mode6Tf {
+    fn transform(&self, p: Vec2, _: Vec2, _: Vec2) -> Vec2 {
+        let mut t = Vec2::new(0., 0.);
+        let mut f = 0.;
+
+        for n in 0..5 {
+            let dp = self.c[n] - p;
+            let dp_norm_sq = dp.norm_squared();
+            let d = 1. / (dp_norm_sq + 0.1);
+            f += d;
+
+            match self.ctype[n] {
+                0 => {
+                    t += self.c0[n] * d;
+                }
+                1 => {
+                    let z = 1. / (dp_norm_sq.sqrt() + 0.01);
+                    t += Vec2::new(-dp.y, dp.x) * (2. * d * z);
+                }
+                2 => {
+                    let z = 1. / (dp_norm_sq.sqrt() + 0.01);
+                    t += Vec2::new(dp.y, -dp.x) * (2. * d * z);
+                }
+                _ => unreachable!(),
+            }
+        }
+
+        let t_scale = if f > 0.000001 { 1.9 / f } else { 0. };
+
+        p + t * t_scale + Vec2::new(-0.1, 0.6)
+    }
+}
+
+pub fn mode_6_tf(rand: &mut Minstd) -> Mode6Tf {
+    const FXW: u32 = 640; // FIXME
+    const YROI: YRoi = YRoi { min: 90, max: 480 - 90 }; // FIXME
+
+    Mode6Tf {
+        c: core::array::from_fn(|_| {
+            Vec2::new(
+                rand.next_idx(10 * FXW) as f32 * 0.1,
+                YROI.min as f32 + rand.next_idx((YROI.max - YROI.min) * 10) as f32 * 0.1,
+            )
+        }),
+        ctype: core::array::from_fn(|_| rand.next_idx(3)),
+        c0: core::array::from_fn(|_| {
+            let d = rand.next_idx(628) as f32 * 0.01;
+            let f = 1. + rand.next_idx(80) as f32 * 0.01;
+            let (sd, cd) = d.sin_cos();
+            Vec2::new(cd, sd) * f
+        }),
+    }
+}
+
 // === Mode 7
 
 pub type Mode7Tf = CenterTransform<TurnVarScaleTransform<Mode7Scale>>;
@@ -202,6 +266,8 @@ impl ScaleF for Mode9Scale {
     }
 }
 
+// === Mode 10
+
 /// Mode 10 uses custom motion vectors
 #[derive(Debug, Clone)]
 pub struct Mode10Tf;
@@ -235,6 +301,8 @@ pub fn mode_11_tf(rand: &mut Minstd) -> Mode11Tf {
         rand,
     )))
 }
+
+// === Mode 12
 
 /// Mode 12 uses custom motion vectors
 #[derive(Debug, Clone)]
@@ -291,6 +359,7 @@ define_transform_enum!(AnyTransform {
     Mode3(Mode3Tf),
     Mode4(Mode4Tf),
     Mode5(Mode5Tf),
+    Mode6(Mode6Tf),
     Mode7(Mode7Tf),
     Mode8(Mode8Tf),
     Mode9(Mode9Tf),

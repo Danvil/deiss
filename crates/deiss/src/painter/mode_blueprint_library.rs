@@ -76,16 +76,17 @@ impl ModeBlueprintLibrary {
             },
         );
 
-        // mode_info.insert(
-        //     ModeId(6),
-        //     ModeBlueprint {
-        //         effect_freq: [400, 120, 200, 0, 0, 0, 0, 0].into(),
-        //         solar_max: 60,
-        //         center_dwindle: 1.0,
-        //         effect_count: [1, 2],
-        //         motion_dampened: false,
-        //     },
-        // );
+        mode_info.insert(
+            ModeId(6),
+            ModeBlueprint {
+                effect_freq: [400, 120, 200, 0, 0, 0, 0, 0].into(),
+                solar_max: 60,
+                center_dwindle: 1.0,
+                effect_count: [1, 2],
+                motion_dampened: false,
+                tf_gen: Box::new(|rand: &mut _| mode_6_tf(rand).into()),
+            },
+        );
 
         mode_info.insert(
             ModeId(7),
