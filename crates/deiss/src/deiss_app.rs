@@ -24,11 +24,29 @@ impl DeissApp {
     }
 
     fn resumed_impl(&mut self, event_loop: &ActiveEventLoop) -> Result<()> {
+        let window_size = winit::dpi::LogicalSize::new((3 * 640) as f32, (3 * 480) as f32);
+
+        // Calculate center position
+        let center_position = if let Some(monitor) = event_loop.primary_monitor() {
+            let monitor_size = monitor.size();
+            let scale_factor = monitor.scale_factor();
+            let logical_monitor_size = monitor_size.to_logical::<f32>(scale_factor);
+
+            winit::dpi::LogicalPosition::new(
+                (logical_monitor_size.width - window_size.width) / 2.0,
+                (logical_monitor_size.height - window_size.height) / 2.0,
+            )
+        } else {
+            // Fallback position if no primary monitor is found
+            winit::dpi::LogicalPosition::new(100.0, 100.0)
+        };
+
         let window = Arc::new(
             event_loop.create_window(
                 WindowAttributes::default()
                     .with_title("DEISS")
-                    .with_inner_size(winit::dpi::LogicalSize::new(640.0, 480.0)),
+                    .with_inner_size(window_size)
+                    .with_position(center_position),
             )?,
         );
 
