@@ -1,17 +1,20 @@
 use crate::{
-    renderer::Gpu,
+    gui::demo_gui,
+    renderer::{EguiRenderer, Gpu},
     utils::{RgbaImage, Shape2},
 };
 use wgpu::{TextureView, util::DeviceExt};
+use winit::{event::WindowEvent, window::Window};
 
 pub struct Renderer {
     render_pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
+    gui: EguiRenderer,
 }
 
 impl Renderer {
-    pub fn new(gpu: &Gpu) -> Self {
+    pub fn new(gpu: &Gpu, window: &Window) -> Self {
         let vertex_shader_src = include_str!("screen_space_quad.wgsl");
         let fragment_shader_src = include_str!("tonemap.wgsl");
         let source = format!("{vertex_shader_src}\n{fragment_shader_src}");
@@ -58,7 +61,7 @@ impl Renderer {
             gpu.device().create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[&bind_group_layout],
-                immediate_size: 0,
+                push_constant_ranges: &[],
             });
 
         let render_pipeline =
@@ -96,7 +99,7 @@ impl Renderer {
                     mask: !0,
                     alpha_to_coverage_enabled: false,
                 },
-                multiview_mask: None,
+                multiview: None,
                 cache: None,
             });
 
@@ -106,19 +109,30 @@ impl Renderer {
             address_mode_w: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
 
-        Self { render_pipeline, bind_group_layout, sampler }
+        let gui = EguiRenderer::new(gpu.device(), wgpu::TextureFormat::Bgra8UnormSrgb, window);
+
+        Self { render_pipeline, bind_group_layout, sampler, gui }
+    }
+
+    pub fn handle_input(
+        &mut self,
+        window: &Window,
+        event: &WindowEvent,
+    ) -> egui_winit::EventResponse {
+        self.gui.handle_input(window, event)
     }
 
     pub fn render(
-        &self,
+        &mut self,
         gpu: &Gpu,
         texture_view: TextureView,
         surface_shape: Shape2,
         image: &RgbaImage,
+        win: &Window,
     ) {
         let texture_size =
             wgpu::Extent3d { width: image.cols(), height: image.rows(), depth_or_array_layers: 1 };
@@ -198,12 +212,32 @@ impl Renderer {
                 depth_stencil_attachment: None,
                 timestamp_writes: None,
                 occlusion_query_set: None,
-                multiview_mask: None,
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &bind_group, &[]);
             render_pass.draw(0..3, 0..1);
+        }
+
+        // render EGUI: render over present
+        {
+            self.gui.begin_frame(&win);
+
+            demo_gui(self.gui.context());
+
+            let screen_desc = egui_wgpu::ScreenDescriptor {
+                size_in_pixels: [surface_shape.cols(), surface_shape.rows()],
+                pixels_per_point: win.scale_factor() as f32 * self.gui.scale_factor(),
+            };
+
+            self.gui.end_frame_and_draw(
+                gpu.device(),
+                gpu.queue(),
+                &mut encoder,
+                win,
+                &texture_view,
+                screen_desc,
+            );
         }
 
         gpu.queue().submit([encoder.finish()]);

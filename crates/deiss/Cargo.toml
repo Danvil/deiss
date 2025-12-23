@@ -5,6 +5,9 @@ version = "0.1.0"
 
 [dependencies]
 bytemuck = { workspace = true }
+egui = { workspace = true }
+egui-wgpu = { workspace = true }
+egui-winit = { workspace = true }
 env_logger = { workspace = true }
 eyre = { workspace = true }
 log = { workspace = true }

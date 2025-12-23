@@ -81,7 +81,10 @@ impl ApplicationHandler for DeissApp {
             WindowEvent::Resized(size) => {
                 state.resize(size);
             }
-            _ => (),
+            _ => {
+                // Let GUI handle other events
+                state.handle_input(&event);
+            }
         }
     }
 }
@@ -100,7 +103,7 @@ impl State {
     pub async fn new(window: Arc<Window>, config: SharedConfig) -> Result<Self> {
         let gpu = Arc::new(Gpu::new().await?);
         let surface = Surface::new(gpu.clone(), window.clone())?;
-        let renderer = Renderer::new(&gpu);
+        let renderer = Renderer::new(&gpu, &window);
 
         let painter = Arc::new(Mutex::new(Painter::new(surface.size_as_shape())));
         // let listener = ConsoleAudioListener::new();
@@ -138,9 +141,14 @@ impl State {
             texture_view,
             self.surface.size_as_shape(),
             self.painter.lock().unwrap().image(),
+            &self.window,
         );
 
         self.window.pre_present_notify();
         surface_texture.present();
+    }
+
+    pub fn handle_input(&mut self, event: &WindowEvent) {
+        self.renderer.handle_input(&self.window, event);
     }
 }

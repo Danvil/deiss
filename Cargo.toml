@@ -4,13 +4,16 @@ resolver = "3"
 
 [workspace.dependencies]
 bytemuck = "1.14"
+egui = "0.33"
+egui-wgpu = { version = "0.33", features = ["winit"] }
+egui-winit = "0.33"
 env_logger = "0.11"
 eyre = "0.6"
 log = "0.4"
 pollster = "0.4"
 rodio = "0.19"
-wgpu = "28"
-winit = "0.30.8"
+wgpu = "27.0.1"
+winit = "0.30.12"
 
 [workspace.lints.rust]
 dead_code = "allow"
