@@ -1,13 +1,13 @@
-mod dots;
 mod grid;
+mod nuclide;
 mod one_dotty_chaser;
 mod shade_bobs;
 mod snack_bar;
 mod solar_particles;
 mod two_chasers;
 
-pub use dots::*;
 pub use grid::*;
+pub use nuclide::*;
 pub use one_dotty_chaser::*;
 pub use shade_bobs::*;
 pub use snack_bar::*;

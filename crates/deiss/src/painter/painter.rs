@@ -110,6 +110,11 @@ impl Painter {
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
+        if spec.effects[EffectKind::Nuclide] {
+            fx::Nuclide::new_nuclide(spec.center, &self.settings, &mut self.globals)
+                .render(&mut self.img, &mut self.globals.rand);
+        }
+
         if spec.effects[EffectKind::Grid] {
             fx::Grid::new(&self.settings, &self.globals)
                 .render(&mut self.img, &mut self.globals.rand);
@@ -118,10 +123,9 @@ impl Painter {
         process_map(&self.settings, fx.as_slice(), &self.img, &mut self.next);
         mem::swap(&mut self.img, &mut self.next);
 
-        if let Some(fx) = fx::Dots::new(&spec, &self.settings, &mut self.globals) {
-            // println!(" >> Dots");
-            fx.render(&mut self.img, &mut self.globals.rand);
-        }
+        // render dots on beats
+        fx::Nuclide::new_beat_dots(spec.center, &self.settings, &mut self.globals)
+            .render(&mut self.img, &mut self.globals.rand);
     }
 }
 

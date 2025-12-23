@@ -34,15 +34,15 @@ impl Effect for SolarParticles {
                 }
             }
 
-            pxls[idx].sat_add_u8_3(delta[0]);
-            pxls[idx + 1].sat_add_u8_3(delta[1]);
-            pxls[idx - 1].sat_add_u8_3(delta[1]);
-            pxls[idx + cols].sat_add_u8_3(delta[1]);
-            pxls[idx - cols].sat_add_u8_3(delta[1]);
-            pxls[idx + cols + 1].sat_add_u8_3(delta[2]);
-            pxls[idx + cols - 1].sat_add_u8_3(delta[2]);
-            pxls[idx - cols + 1].sat_add_u8_3(delta[2]);
-            pxls[idx - cols - 1].sat_add_u8_3(delta[2]);
+            pxls[idx].sat_add_u3(delta[0]);
+            pxls[idx + 1].sat_add_u3(delta[1]);
+            pxls[idx - 1].sat_add_u3(delta[1]);
+            pxls[idx + cols].sat_add_u3(delta[1]);
+            pxls[idx - cols].sat_add_u3(delta[1]);
+            pxls[idx + cols + 1].sat_add_u3(delta[2]);
+            pxls[idx + cols - 1].sat_add_u3(delta[2]);
+            pxls[idx - cols + 1].sat_add_u3(delta[2]);
+            pxls[idx - cols - 1].sat_add_u3(delta[2]);
         }
     }
 }
