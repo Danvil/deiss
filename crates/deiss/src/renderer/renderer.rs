@@ -1,5 +1,6 @@
 use crate::{
     gui::demo_gui,
+    painter::Settings,
     renderer::{EguiRenderer, Gpu},
     utils::{RgbaImage, Shape2},
 };
@@ -126,13 +127,12 @@ impl Renderer {
         self.gui.handle_input(window, event)
     }
 
-    pub fn render(
+    pub fn render_img(
         &mut self,
         gpu: &Gpu,
         texture_view: TextureView,
         surface_shape: Shape2,
         image: &RgbaImage,
-        win: &Window,
     ) {
         let texture_size =
             wgpu::Extent3d { width: image.cols(), height: image.rows(), depth_or_array_layers: 1 };
@@ -218,12 +218,24 @@ impl Renderer {
             render_pass.set_bind_group(0, &bind_group, &[]);
             render_pass.draw(0..3, 0..1);
         }
+        gpu.queue().submit([encoder.finish()]);
+    }
+
+    pub fn render_gui(
+        &mut self,
+        gpu: &Gpu,
+        texture_view: TextureView,
+        surface_shape: Shape2,
+        win: &Window,
+        f: impl FnOnce(&egui::Context),
+    ) {
+        let mut encoder = gpu.device().create_command_encoder(&Default::default());
 
         // render EGUI: render over present
         {
             self.gui.begin_frame(&win);
 
-            demo_gui(self.gui.context());
+            f(self.gui.context());
 
             let screen_desc = egui_wgpu::ScreenDescriptor {
                 size_in_pixels: [surface_shape.cols(), surface_shape.rows()],

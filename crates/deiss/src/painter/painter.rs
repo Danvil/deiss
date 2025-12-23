@@ -39,7 +39,7 @@ impl Painter {
             gf: core::array::from_fn(|_| {
                 ((globals.rand.next_idx(1000) as f32) * 0.001) * 0.01 + 0.02
             }),
-            mode_prefs: ModePrefs::new(),
+            mode_prefs: ModePrefs::new(&[1, 2, 3, 4, 5, 7, 8, 9]),
         };
 
         let library = ModeBlueprintLibrary::new(&mut globals);
@@ -58,6 +58,10 @@ impl Painter {
 
     pub fn image(&self) -> &RgbaImage {
         &self.img
+    }
+
+    pub fn settings_mut(&mut self) -> &mut Settings {
+        &mut self.settings
     }
 
     pub fn on_render(&mut self) {

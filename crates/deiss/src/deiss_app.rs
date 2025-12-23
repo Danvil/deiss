@@ -1,6 +1,7 @@
 use crate::{
     audio::Playback,
     config::{Config, SharedConfig},
+    gui::deiss_gui,
     painter::Painter,
     renderer::{Gpu, Renderer, Surface},
 };
@@ -134,14 +135,23 @@ impl State {
         let (surface_texture, texture_view) =
             self.surface.texture().expect("failed to acquire next swapchain texture");
 
-        self.painter.lock().unwrap().on_render();
+        let mut painter = self.painter.lock().unwrap();
 
-        self.renderer.render(
+        painter.on_render();
+
+        self.renderer.render_img(
+            &self.gpu,
+            texture_view.clone(),
+            self.surface.size_as_shape(),
+            painter.image(),
+        );
+
+        self.renderer.render_gui(
             &self.gpu,
             texture_view,
             self.surface.size_as_shape(),
-            self.painter.lock().unwrap().image(),
             &self.window,
+            |ctx| deiss_gui(ctx, painter.settings_mut()),
         );
 
         self.window.pre_present_notify();

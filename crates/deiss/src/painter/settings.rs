@@ -32,42 +32,54 @@ impl YRoi {
 
 #[derive(Debug, Clone)]
 pub struct ModePrefs {
-    // values range from 0 to 5 stars; default is 3
-    values: Vec<u32>,
-    total: u32,
+    /// If set always pick this mode
+    priority: Option<ModeId>,
+
+    /// Weights to select modes (also indicates valid modes). Weights are 0 to 5 stars.
+    weights: Vec<(ModeId, u32)>,
 }
 
 impl ModePrefs {
-    pub fn new() -> Self {
-        Self { values: vec![0; 128], total: 0 }
+    pub fn new(modes: &[u32]) -> Self {
+        Self { priority: None, weights: modes.into_iter().map(|&i| (ModeId(i), 3)).collect() }
     }
 }
 
-const NUM_MODES: u32 = 25;
-
 impl ModePrefs {
     pub fn pick(&self, rng: &mut Minstd) -> ModeId {
-        // ModeId(9)
-
-        loop {
-            let m = ModeId(1 + rng.next_idx(9));
-            if m == ModeId(6) {
-                continue;
+        if let Some(m) = self.priority {
+            m
+        } else {
+            // weighted sampling based on preferences
+            let total = self.weights.iter().map(|(_, w)| w).sum::<u32>();
+            if total == 0 {
+                return ModeId(1);
             }
-            return m;
-        }
 
-        // if self.total == 0 {
-        //     let mut m = 1 + rng.next_idx(NUM_MODES);
-        //     if rng.next_idx(25) == 0 {
-        //         m = 7;
-        //     }
-        //     if rng.next_idx(25) == 0 {
-        //         m = 5;
-        //     }
-        //     m.into()
-        // } else {
-        //     todo!()
-        // }
+            let mut rnd = rng.next_idx(total);
+            for &(m, w) in self.weights.iter() {
+                if rnd <= w {
+                    return m;
+                }
+                rnd -= w;
+            }
+            unreachable!()
+        }
+    }
+
+    pub fn weights(&self) -> &[(ModeId, u32)] {
+        &self.weights
+    }
+
+    pub fn weights_mut(&mut self) -> &mut [(ModeId, u32)] {
+        &mut self.weights
+    }
+
+    pub fn priority(&self) -> Option<ModeId> {
+        self.priority
+    }
+
+    pub fn set_priority(&mut self, priority: Option<ModeId>) {
+        self.priority = priority;
     }
 }
