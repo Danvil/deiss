@@ -122,6 +122,15 @@ impl Painter {
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
+        {
+            let center_dwindle = self.library[spec.mode].center_dwindle;
+            if center_dwindle < 0.999 {
+                let center_mode = spec.mode != ModeId(12);
+                fx::DiminishCenter::new(spec.center, center_mode, center_dwindle, &self.settings)
+                    .render(&mut self.img, &mut self.globals.rand);
+            }
+        }
+
         process_map(&self.settings, fx.as_slice(), &self.img, &mut self.next);
         mem::swap(&mut self.img, &mut self.next);
 

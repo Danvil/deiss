@@ -1,3 +1,4 @@
+mod diminish_center;
 mod grid;
 mod nuclide;
 mod one_dotty_chaser;
@@ -6,6 +7,7 @@ mod snack_bar;
 mod solar_particles;
 mod two_chasers;
 
+pub use diminish_center::*;
 pub use grid::*;
 pub use nuclide::*;
 pub use one_dotty_chaser::*;

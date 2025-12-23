@@ -17,6 +17,12 @@ impl Rgba {
         ])
     }
 
+    pub fn scale_f(&mut self, scale: f32) {
+        for i in 0..3 {
+            self[i] = (self[i] as f32 * scale) as u8;
+        }
+    }
+
     pub fn sat_add_u3(&mut self, delta: [u8; 3]) {
         for i in 0..3 {
             self[i] = self[i].saturating_add(delta[i]);
