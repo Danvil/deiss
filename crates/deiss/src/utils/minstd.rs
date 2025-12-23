@@ -12,7 +12,7 @@ impl Default for Minstd {
 impl Minstd {
     pub fn from_seed(seed: u64) -> Self {
         let mut out = Self { u: seed.saturating_add(1) };
-        for i in 0..8 {
+        for _ in 0..8 {
             out.next();
         }
         out

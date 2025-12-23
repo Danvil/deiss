@@ -162,6 +162,6 @@ impl State {
     }
 
     pub fn handle_input(&mut self, event: &WindowEvent) {
-        self.renderer.handle_input(&self.window, event);
+        let _ = self.renderer.handle_input(&self.window, event);
     }
 }

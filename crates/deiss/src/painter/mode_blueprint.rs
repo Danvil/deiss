@@ -16,19 +16,6 @@ impl ModeBlueprint {
     }
 }
 
-impl Default for ModeBlueprint {
-    fn default() -> Self {
-        ModeBlueprint {
-            effect_freq: EffectFreq::default(),
-            solar_max: 60,
-            center_dwindle: 0.99,
-            effect_count: [1, 2],
-            motion_dampened: false,
-            tf_gen: Box::new(|_: &mut _| TurnScaleTransform::from_scale_turn(1., 0.).into()),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub enum EffectKind {

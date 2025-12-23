@@ -123,38 +123,41 @@ impl ModeBlueprintLibrary {
             },
         );
 
-        // mode_info.insert(
-        //     ModeId(10),
-        //     ModeBlueprint {
-        //         effect_freq: [150, 20, 80, 0, 0, 80, 0, 0].into(),
-        //         solar_max: 0,
-        //         center_dwindle: 1.0,
-        //         effect_count: [0, 2],
-        //         motion_dampened: true,
-        //     },
-        // );
+        mode_info.insert(
+            ModeId(10),
+            ModeBlueprint {
+                effect_freq: [150, 20, 80, 0, 0, 80, 0, 0].into(),
+                solar_max: 0,
+                center_dwindle: 1.0,
+                effect_count: [0, 2],
+                motion_dampened: true,
+                tf_gen: Box::new(|_: &mut _| mode_10_tf().into()),
+            },
+        );
 
-        // mode_info.insert(
-        //     ModeId(11),
-        //     ModeBlueprint {
-        //         effect_freq: [360, 200, 230, 550, 10, 330, 150, 0].into(),
-        //         solar_max: 750,
-        //         center_dwindle: 1.0,
-        //         effect_count: [0, 4],
-        //         motion_dampened: true,
-        //     },
-        // );
+        mode_info.insert(
+            ModeId(11),
+            ModeBlueprint {
+                effect_freq: [360, 200, 230, 550, 10, 330, 150, 0].into(),
+                solar_max: 750,
+                center_dwindle: 1.0,
+                effect_count: [0, 4],
+                motion_dampened: true,
+                tf_gen: Box::new(|rand: &mut _| mode_11_tf(rand).into()),
+            },
+        );
 
-        // mode_info.insert(
-        //     ModeId(12),
-        //     ModeBlueprint {
-        //         effect_freq: [360, 200, 230, 0, 0, 330, 0, 0].into(),
-        //         solar_max: 500,
-        //         center_dwindle: 0.915,
-        //         effect_count: [0, 2],
-        //         motion_dampened: true,
-        //     },
-        // );
+        mode_info.insert(
+            ModeId(12),
+            ModeBlueprint {
+                effect_freq: [360, 200, 230, 0, 0, 330, 0, 0].into(),
+                solar_max: 500,
+                center_dwindle: 0.915,
+                effect_count: [0, 2],
+                motion_dampened: true,
+                tf_gen: Box::new(|_: &mut _| mode_12_tf().into()),
+            },
+        );
 
         // mode_info.insert(
         //     ModeId(13),

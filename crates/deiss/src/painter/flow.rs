@@ -82,7 +82,12 @@ impl FlowMapGen {
     }
 }
 
-pub fn bake<M: PixelTransform>(s: &Settings, center: Vec2, damping: f32, mode: &M) -> Image<FxPxl> {
+pub fn bake<M: GeneralPixelTransform>(
+    s: &Settings,
+    center: Vec2,
+    damping: f32,
+    mode: &M,
+) -> Image<FxPxl> {
     let s_fxw_minus_once = (s.fxw - 1) as f32;
     // let half_fxw = s.fxw as f32 * 0.5;
 
@@ -91,10 +96,12 @@ pub fn bake<M: PixelTransform>(s: &Settings, center: Vec2, damping: f32, mode: &
         _ => 255.,
     };
 
+    let shape = Vec2::new(s.fxw as f32, s.fxh as f32);
+
     Image::from_fn((s.fxh, s.fxw).into(), |(i, j)| {
         let pi = Vec2 { x: j as f32, y: i as f32 };
 
-        let p2 = mode.transform(pi - center) + center;
+        let p2 = mode.transform(pi, center, shape);
 
         let p4 = pi * (1.0 - damping) + p2 * damping;
 

@@ -1,6 +1,7 @@
 use crate::{
     painter::{
-        DitherTurnScaleTransform, PixelTransform, ScaleF, TurnScaleTransform, TurnVarScaleTf,
+        CenterTransform, DitherTurnScaleTransform, GeneralPixelTransform, ScaleF,
+        TurnScaleTransform, TurnVarScaleTransform,
     },
     utils::*,
 };
@@ -8,11 +9,20 @@ use crate::{
 const RMULT: f32 = 1.0; // 640/FXW
 const PROTECTIVE_FACTOR: f32 = 1.0; // min(640/FWX, 1)
 
+#[derive(Debug, Clone)]
+pub struct Marked<T, const N: usize>(T);
+
+impl<T: GeneralPixelTransform, const N: usize> GeneralPixelTransform for Marked<T, N> {
+    fn transform(&self, p: Vec2, c: Vec2, s: Vec2) -> Vec2 {
+        self.0.transform(p, c, s)
+    }
+}
+
 // === Mode 1
 
-pub type Mode1Tf = DitherTurnScaleTransform;
+pub type Mode1Tf = Marked<CenterTransform<DitherTurnScaleTransform>, 1>;
 
-pub fn mode_1_tf(rand: &mut Minstd) -> DitherTurnScaleTransform {
+pub fn mode_1_tf(rand: &mut Minstd) -> Mode1Tf {
     let scale1 = 0.985 - 0.12 * rand.next_01_prom().powi(2);
     let scale2 = scale1;
 
@@ -23,27 +33,31 @@ pub fn mode_1_tf(rand: &mut Minstd) -> DitherTurnScaleTransform {
         turn1 *= -1.;
     }
 
-    Mode1Tf::from_scale_turn_raw([scale1, scale2], [turn1, turn2], rand)
+    Marked(CenterTransform::new(DitherTurnScaleTransform::from_scale_turn_raw(
+        [scale1, scale2],
+        [turn1, turn2],
+        rand,
+    )))
 }
 
 // === Mode 2
 
-pub type Mode2Tf = TurnScaleTransform;
+pub type Mode2Tf = Marked<CenterTransform<TurnScaleTransform>, 2>;
 
 pub fn mode_2_tf(rand: &mut Minstd) -> Mode2Tf {
     let scale = 1.00 - 0.02 * rand.next_01_prom();
     let turn = 0.02 + 0.07 * rand.next_01_prom();
-    Mode2Tf::from_scale_turn_raw(scale, turn, rand)
+    Marked(CenterTransform::new(TurnScaleTransform::from_scale_turn_raw(scale, turn, rand)))
 }
 
 // === Mode 3
 
-pub type Mode3Tf = TurnVarScaleTf<Mode3Scale>;
+pub type Mode3Tf = CenterTransform<TurnVarScaleTransform<Mode3Scale>>;
 
 pub fn mode_3_tf(rand: &mut Minstd) -> Mode3Tf {
     let scale = 0.85 + 0.10 * rand.next_01_prom();
     let turn = 0.01 + 0.015 * rand.next_01_prom();
-    Mode3Tf::new_raw(turn, Mode3Scale(scale), rand)
+    CenterTransform::new(TurnVarScaleTransform::new_raw(turn, Mode3Scale(scale), rand))
 }
 
 #[derive(Debug, Clone)]
@@ -57,11 +71,11 @@ impl ScaleF for Mode3Scale {
 
 // === Mode 4
 
-pub type Mode4Tf = TurnVarScaleTf<Mode4Scale>;
+pub type Mode4Tf = CenterTransform<TurnVarScaleTransform<Mode4Scale>>;
 
 pub fn mode_4_tf(rand: &mut Minstd) -> Mode4Tf {
     let turn = 0.007 + 0.02 * rand.next_01_prom();
-    Mode4Tf::new_raw(turn, Mode4Scale, rand)
+    CenterTransform::new(TurnVarScaleTransform::new_raw(turn, Mode4Scale, rand))
 }
 
 #[derive(Debug, Clone)]
@@ -76,13 +90,17 @@ impl ScaleF for Mode4Scale {
 
 // === Mode 5
 
-pub type Mode5Tf = TurnVarScaleTf<Mode5Scale>;
+pub type Mode5Tf = CenterTransform<TurnVarScaleTransform<Mode5Scale>>;
 
 pub fn mode_5_tf(has_nuclide_effect: bool, rand: &mut Minstd) -> Mode5Tf {
     let turn = 0.01 + 0.03 * rand.next_01_prom();
     let f1 = 0.05 + 0.05 * rand.next_01_prom() + 0.07 * rand.next_01_prom();
     let f2 = 0.99 - 0.01 * rand.next_01_prom() - 0.02 * rand.next_01_prom();
-    Mode5Tf::new_raw(turn, Mode5Scale { has_nuclide_effect, f1, f2 }, rand)
+    CenterTransform::new(TurnVarScaleTransform::new_raw(
+        turn,
+        Mode5Scale { has_nuclide_effect, f1, f2 },
+        rand,
+    ))
 }
 
 #[derive(Debug, Clone)]
@@ -108,14 +126,18 @@ impl ScaleF for Mode5Scale {
 
 // === Mode 7
 
-pub type Mode7Tf = TurnVarScaleTf<Mode7Scale>;
+pub type Mode7Tf = CenterTransform<TurnVarScaleTransform<Mode7Scale>>;
 
 pub fn mode_7_tf(rand: &mut Minstd) -> Mode7Tf {
     let turn = 0.01 + 0.01 * rand.next_01_prom();
     let f1 = 0.92 + 0.01 * rand.next_01_prom();
     let f2 = 0.0006 + 0.0005 * rand.next_01_prom();
     let rand_array = (0..2345).map(|_| rand.next_idx(100) as f32 * 0.0005).collect();
-    Mode7Tf::new_raw(turn, Mode7Scale { f1, f2, rand_array }, rand)
+    CenterTransform::new(TurnVarScaleTransform::new_raw(
+        turn,
+        Mode7Scale { f1, f2, rand_array },
+        rand,
+    ))
 }
 
 #[derive(Debug, Clone)]
@@ -136,12 +158,12 @@ impl ScaleF for Mode7Scale {
 
 // === Mode 8
 
-pub type Mode8Tf = TurnVarScaleTf<Mode8Scale>;
+pub type Mode8Tf = CenterTransform<TurnVarScaleTransform<Mode8Scale>>;
 
 pub fn mode_8_tf(rand: &mut Minstd) -> Mode8Tf {
     let turn = 0.05 * rand.next_01_prom();
     let f1 = rand.next_01_prom().powi(3) * 8. + 1.5;
-    Mode8Tf::new_raw(turn, Mode8Scale { f1 }, rand)
+    CenterTransform::new(TurnVarScaleTransform::new_raw(turn, Mode8Scale { f1 }, rand))
 }
 
 #[derive(Debug, Clone)]
@@ -158,13 +180,13 @@ impl ScaleF for Mode8Scale {
 
 // === Mode 9
 
-pub type Mode9Tf = TurnVarScaleTf<Mode9Scale>;
+pub type Mode9Tf = CenterTransform<TurnVarScaleTransform<Mode9Scale>>;
 
 pub fn mode_9_tf(rand: &mut Minstd) -> Mode9Tf {
     let turn = 0.01 + 0.03 * rand.next_01_prom();
     let f1 = 0.98 + 0.01 * rand.next_01_prom();
     let f2 = 0.0009 + 0.0012 * rand.next_01_prom();
-    Mode9Tf::new_raw(turn, Mode9Scale { f1, f2 }, rand)
+    CenterTransform::new(TurnVarScaleTransform::new_raw(turn, Mode9Scale { f1, f2 }, rand))
 }
 
 #[derive(Debug, Clone)]
@@ -180,10 +202,90 @@ impl ScaleF for Mode9Scale {
     }
 }
 
+/// Mode 10 uses custom motion vectors
+#[derive(Debug, Clone)]
+pub struct Mode10Tf;
+
+impl GeneralPixelTransform for Mode10Tf {
+    fn transform(&self, p: Vec2, center: Vec2, shape: Vec2) -> Vec2 {
+        Vec2::new((p.x - center.x) * (1.03 + 0.03 * p.y / shape.y) + center.x, p.y * 1.04)
+    }
+}
+
+pub fn mode_10_tf() -> Mode10Tf {
+    Mode10Tf
+}
+
+// === Mode 11
+
+pub type Mode11Tf = Marked<CenterTransform<DitherTurnScaleTransform>, 11>;
+
+pub fn mode_11_tf(rand: &mut Minstd) -> Mode11Tf {
+    let mut scale1 = 1.008 + 0.008 * rand.next_01_prom();
+    let mut scale2 = scale1;
+    let mut turn1 = 0.12 + 0.06 * rand.next_01_prom();
+    let mut turn2 = turn1;
+    turn1 *= -0.6;
+    turn2 *= 0.1;
+    scale1 *= 0.99;
+    scale2 *= 1.01;
+    Marked(CenterTransform::new(DitherTurnScaleTransform::from_scale_turn_raw(
+        [scale1, scale2],
+        [turn1, turn2],
+        rand,
+    )))
+}
+
+/// Mode 12 uses custom motion vectors
+#[derive(Debug, Clone)]
+pub struct Mode12Tf;
+
+impl GeneralPixelTransform for Mode12Tf {
+    fn transform(&self, p: Vec2, center: Vec2, _: Vec2) -> Vec2 {
+        let nx = p.x - center.x;
+        let dx = if nx < -0.5 {
+            -(-nx).sqrt() + 0.9
+        } else if nx > 0.5 {
+            nx.sqrt() - 0.9
+        } else {
+            0.
+        };
+        Vec2::new(center.x + dx, p.y)
+    }
+}
+
+pub fn mode_12_tf() -> Mode12Tf {
+    Mode12Tf
+}
+
 // === Mode Tf enum
 
-#[derive(Debug, Clone)]
-pub enum AnyTransform {
+macro_rules! define_transform_enum {
+    ($enum_name:ident { $($variant:ident($type:ty)),+ $(,)? }) => {
+        #[derive(Debug, Clone)]
+        pub enum $enum_name {
+            $($variant($type),)+
+        }
+
+        impl GeneralPixelTransform for $enum_name {
+            fn transform(&self, p: Vec2, c: Vec2, s: Vec2) -> Vec2 {
+                match self {
+                    $(Self::$variant(tf) => tf.transform(p, c, s),)+
+                }
+            }
+        }
+
+        $(
+            impl From<$type> for $enum_name {
+                fn from(transform: $type) -> Self {
+                    Self::$variant(transform)
+                }
+            }
+        )+
+    };
+}
+
+define_transform_enum!(AnyTransform {
     Mode1(Mode1Tf),
     Mode2(Mode2Tf),
     Mode3(Mode3Tf),
@@ -192,38 +294,7 @@ pub enum AnyTransform {
     Mode7(Mode7Tf),
     Mode8(Mode8Tf),
     Mode9(Mode9Tf),
-}
-
-impl PixelTransform for AnyTransform {
-    fn transform(&self, p: Vec2) -> Vec2 {
-        match self {
-            AnyTransform::Mode1(tf) => tf.transform(p),
-            AnyTransform::Mode2(tf) => tf.transform(p),
-            AnyTransform::Mode3(tf) => tf.transform(p),
-            AnyTransform::Mode4(tf) => tf.transform(p),
-            AnyTransform::Mode5(tf) => tf.transform(p),
-            AnyTransform::Mode7(tf) => tf.transform(p),
-            AnyTransform::Mode8(tf) => tf.transform(p),
-            AnyTransform::Mode9(tf) => tf.transform(p),
-        }
-    }
-}
-
-macro_rules! impl_into_any_transform {
-    ($transform_type:ty, $variant:ident) => {
-        impl Into<AnyTransform> for $transform_type {
-            fn into(self) -> AnyTransform {
-                AnyTransform::$variant(self)
-            }
-        }
-    };
-}
-
-impl_into_any_transform!(Mode1Tf, Mode1);
-impl_into_any_transform!(Mode2Tf, Mode2);
-impl_into_any_transform!(Mode3Tf, Mode3);
-impl_into_any_transform!(Mode4Tf, Mode4);
-impl_into_any_transform!(Mode5Tf, Mode5);
-impl_into_any_transform!(Mode7Tf, Mode7);
-impl_into_any_transform!(Mode8Tf, Mode8);
-impl_into_any_transform!(Mode9Tf, Mode9);
+    Mode10(Mode10Tf),
+    Mode11(Mode11Tf),
+    Mode12(Mode12Tf),
+});

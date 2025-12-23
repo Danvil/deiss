@@ -1,5 +1,26 @@
 use crate::utils::*;
 
+pub trait GeneralPixelTransform {
+    fn transform(&self, point: Vec2, center: Vec2, shape: Vec2) -> Vec2;
+}
+
+#[derive(Debug, Clone)]
+pub struct CenterTransform<T> {
+    inner: T,
+}
+
+impl<T> CenterTransform<T> {
+    pub fn new(inner: T) -> Self {
+        Self { inner }
+    }
+}
+
+impl<T: PixelTransform> GeneralPixelTransform for CenterTransform<T> {
+    fn transform(&self, point: Vec2, center: Vec2, _: Vec2) -> Vec2 {
+        self.inner.transform(point - center) + center
+    }
+}
+
 /// Pixel coordinate transformation mainly used for motion fields
 pub trait PixelTransform {
     fn transform(&self, p: Vec2) -> Vec2;
@@ -74,13 +95,13 @@ impl PixelTransform for DitherTurnScaleTransform {
 
 /// Turn-Scale transformation with scale dependent on the pixel coordinate
 #[derive(Debug, Clone)]
-pub struct TurnVarScaleTf<S> {
+pub struct TurnVarScaleTransform<S> {
     turn: f32,
     rot: Rot2,
     scale_f: S,
 }
 
-impl<S> TurnVarScaleTf<S> {
+impl<S> TurnVarScaleTransform<S> {
     pub fn new_raw(mut turn: f32, scale_f: S, rand: &mut Minstd) -> Self {
         if rand.next_bool() {
             turn *= -1.;
@@ -92,7 +113,7 @@ impl<S> TurnVarScaleTf<S> {
     }
 }
 
-impl<S> PixelTransform for TurnVarScaleTf<S>
+impl<S> PixelTransform for TurnVarScaleTransform<S>
 where
     S: ScaleF,
 {

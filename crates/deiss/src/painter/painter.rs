@@ -35,7 +35,7 @@ impl Painter {
             fxh,
             y_roi: YRoi { min: YCUT, max: fxh - YCUT },
             gf: generate_gf(&mut globals.rand),
-            mode_prefs: ModePrefs::new(&[1, 2, 3, 4, 5, 7, 8, 9]),
+            mode_prefs: ModePrefs::new(&[1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12]),
         };
 
         let library = ModeBlueprintLibrary::new(&mut globals);

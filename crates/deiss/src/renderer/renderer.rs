@@ -1,6 +1,4 @@
 use crate::{
-    gui::demo_gui,
-    painter::Settings,
     renderer::{EguiRenderer, Gpu},
     utils::{RgbaImage, Shape2},
 };
