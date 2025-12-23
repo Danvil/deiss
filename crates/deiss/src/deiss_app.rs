@@ -151,7 +151,10 @@ impl State {
             texture_view,
             self.surface.size_as_shape(),
             &self.window,
-            |ctx| deiss_gui(ctx, painter.settings_mut()),
+            |ctx| {
+                let p: &mut Painter = &mut painter;
+                deiss_gui(ctx, &mut p.settings, &mut p.globals)
+            },
         );
 
         self.window.pre_present_notify();

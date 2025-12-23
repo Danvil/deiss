@@ -7,9 +7,9 @@ use crate::{
 use std::{f32, mem};
 
 pub struct Painter {
-    settings: Settings,
-    library: ModeBlueprintLibrary,
-    globals: Globals,
+    pub(crate) settings: Settings,
+    pub(crate) library: ModeBlueprintLibrary,
+    pub(crate) globals: Globals,
     img: RgbaImage,
     next: RgbaImage,
     fx_hub: FlowMapHub,
@@ -19,7 +19,6 @@ pub struct Painter {
 
 impl Painter {
     pub fn new(shape: Shape2) -> Self {
-        const DISP_BIT: u32 = 32;
         const YCUT: u32 = 90;
 
         let mut globals = Globals::default();
@@ -35,10 +34,7 @@ impl Painter {
             fxw,
             fxh,
             y_roi: YRoi { min: YCUT, max: fxh - YCUT },
-            disp_bits: DISP_BIT,
-            gf: core::array::from_fn(|_| {
-                ((globals.rand.next_idx(1000) as f32) * 0.001) * 0.01 + 0.02
-            }),
+            gf: generate_gf(&mut globals.rand),
             mode_prefs: ModePrefs::new(&[1, 2, 3, 4, 5, 7, 8, 9]),
         };
 
@@ -58,10 +54,6 @@ impl Painter {
 
     pub fn image(&self) -> &RgbaImage {
         &self.img
-    }
-
-    pub fn settings_mut(&mut self) -> &mut Settings {
-        &mut self.settings
     }
 
     pub fn on_render(&mut self) {

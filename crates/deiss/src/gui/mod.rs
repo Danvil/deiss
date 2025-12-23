@@ -1,11 +1,16 @@
-use crate::painter::{ModePrefs, Settings};
+use crate::{painter::*, utils::*};
 
 /// Default guid
-pub fn deiss_gui(ctx: &egui::Context, settings: &mut Settings) {
+pub fn deiss_gui(ctx: &egui::Context, settings: &mut Settings, globals: &mut Globals) {
     egui::Window::new("DEISS").resizable(true).vscroll(true).default_open(true).show(ctx, |ui| {
         egui::CollapsingHeader::new("Mode Selection")
             .default_open(true)
             .show(ui, |ui| mode_prefs_gui(ui, &mut settings.mode_prefs));
+        egui::CollapsingHeader::new("Detail").default_open(true).show(ui, |ui| {
+            egui::CollapsingHeader::new("GF")
+                .default_open(true)
+                .show(ui, |ui| settings_gf_gui(ui, &mut settings.gf, &mut globals.rand));
+        });
     });
 }
 
@@ -63,6 +68,27 @@ fn mode_prefs_gui(ui: &mut egui::Ui, mode_prefs: &mut ModePrefs) {
     // Apply priority change
     if new_priority != current_priority {
         mode_prefs.set_priority(new_priority);
+    }
+}
+
+/// Show GF values and allow to recompute
+fn settings_gf_gui(ui: &mut egui::Ui, gf: &mut [f32; 6], rand: &mut Minstd) {
+    ui.label("Nuclid color 'F':");
+    ui.separator();
+
+    // Display each GF value with a slider
+    for (i, gf_val) in gf.iter_mut().enumerate() {
+        ui.horizontal(|ui| {
+            ui.label(format!("F[{}]:", i));
+            ui.add(egui::Slider::new(gf_val, 0.0..=0.1).fixed_decimals(4).step_by(0.0001));
+        });
+    }
+
+    ui.separator();
+
+    // Button to regenerate random GF values
+    if ui.button("Regenerate Random").clicked() {
+        *gf = generate_gf(rand);
     }
 }
 

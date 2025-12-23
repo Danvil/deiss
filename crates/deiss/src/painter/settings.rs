@@ -7,7 +7,6 @@ pub struct Settings {
     pub fxw: u32,
     pub fxh: u32,
     pub y_roi: YRoi,
-    pub disp_bits: u32,
     pub gf: [f32; 6],
     pub mode_prefs: ModePrefs,
 }
@@ -16,6 +15,10 @@ impl Settings {
     pub fn shape(&self) -> Shape2 {
         (self.fxh, self.fxw).into()
     }
+}
+
+pub fn generate_gf(rand: &mut Minstd) -> [f32; 6] {
+    core::array::from_fn(|_| ((rand.next_idx(1000) as f32) * 0.001) * 0.01 + 0.02)
 }
 
 #[derive(Debug, Clone, Copy)]
