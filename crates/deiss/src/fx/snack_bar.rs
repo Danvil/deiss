@@ -18,11 +18,11 @@ impl SnackBar {
             * chromatic_dispersion
             * ((g.floatframe * 0.03 + 1.).sin() + (g.floatframe * 0.04 + 3.).cos());
 
-        let dcr = -3.5
+        let dcb = -3.5
             * chromatic_dispersion
             * ((g.floatframe * 0.05 + 2.).cos() + (g.floatframe * 0.06 + 4.).sin());
 
-        Self { y_roi: s.y_roi, center, frame: [frame + dcr, frame + dcg, frame] }
+        Self { y_roi: s.y_roi, center, frame: [frame, frame + dcg, frame + dcb] }
     }
 }
 
