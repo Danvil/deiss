@@ -81,11 +81,8 @@ impl Painter {
             self.needs_init = false;
 
             if spec.mode == ModeId(1) && self.globals.rand.next_bool() {
-                fx::SolarParticles {
-                    center: (spec.center.x as i32, spec.center.y as i32),
-                    count: 500,
-                }
-                .render(&mut self.img, &mut self.globals.rand);
+                fx::SolarParticles { center: spec.center, count: 500 }
+                    .render(&mut self.img, &mut self.globals.rand);
             }
         }
 
@@ -117,6 +114,11 @@ impl Painter {
 
         if spec.effects[EffectKind::Grid] {
             fx::Grid::new(&self.settings, &self.globals)
+                .render(&mut self.img, &mut self.globals.rand);
+        }
+
+        if spec.effects[EffectKind::Solar] {
+            fx::SolarParticles::new(spec.center, self.library[spec.mode].solar_max, &self.globals)
                 .render(&mut self.img, &mut self.globals.rand);
         }
 
