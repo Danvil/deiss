@@ -1,15 +1,15 @@
 use crate::{painter::*, utils::*};
 
 #[derive(Clone, Copy, Default)]
-pub struct FxPxl {
+pub struct WarpPixel {
     pub weights: [u8; 4],
     pub index: u32,
 }
 
-pub type FlowMap = Image<FxPxl>;
+pub type WarpMap = Image<WarpPixel>;
 
 #[derive(Clone)]
-pub struct FlowMapSpec {
+pub struct WarpSpec {
     pub settings: Settings,
     pub effects: Effects,
     pub mode: ModeId,
@@ -19,7 +19,7 @@ pub struct FlowMapSpec {
     pub tf: AnyTransform,
 }
 
-impl FlowMapSpec {
+impl WarpSpec {
     pub fn generate(s: &Settings, fx: &ModeBlueprintLibrary, g: &mut Globals) -> Self {
         let mode = s.mode_prefs.pick(&mut g.rand);
 
@@ -40,7 +40,7 @@ impl FlowMapSpec {
 
         let tf = fx[mode].generate_transform(&mut g.rand);
 
-        FlowMapSpec {
+        WarpSpec {
             settings: s.clone(),
             effects,
             mode,
@@ -51,6 +51,8 @@ impl FlowMapSpec {
         }
     }
 }
+
+const NUM_WAVES: u32 = 6;
 
 fn pick_compatible_waveform(mode: ModeId, rand: &mut Minstd) -> u32 {
     loop {
@@ -66,18 +68,16 @@ fn pick_compatible_waveform(mode: ModeId, rand: &mut Minstd) -> u32 {
     }
 }
 
-pub struct FlowMapGen {
-    spec: FlowMapSpec,
+pub struct WarpGen {
+    spec: WarpSpec,
 }
 
-const NUM_WAVES: u32 = 6;
-
-impl FlowMapGen {
-    pub fn new(spec: FlowMapSpec) -> Self {
-        FlowMapGen { spec }
+impl WarpGen {
+    pub fn new(spec: WarpSpec) -> Self {
+        WarpGen { spec }
     }
 
-    pub fn run(&mut self) -> FlowMap {
+    pub fn run(&mut self) -> WarpMap {
         bake(&self.spec.settings, self.spec.center.cast(), self.spec.damping, &self.spec.tf)
     }
 }
@@ -87,7 +87,7 @@ pub fn bake<M: GeneralPixelTransform>(
     center: Vec2,
     damping: f32,
     mode: &M,
-) -> Image<FxPxl> {
+) -> Image<WarpPixel> {
     let s_fxw_minus_once = (s.fxw - 1) as f32;
     // let half_fxw = s.fxw as f32 * 0.5;
 
@@ -134,11 +134,11 @@ pub fn bake<M: GeneralPixelTransform>(
             (dx * dy * weightsum_this_pixel) as u8,
         ];
 
-        FxPxl { weights, index }
+        WarpPixel { weights, index }
     })
 }
 
-pub fn process_map(s: &Settings, fx: &[FxPxl], src: &RgbaImage, dst: &mut RgbaImage) {
+pub fn process_map(s: &Settings, fx: &[WarpPixel], src: &RgbaImage, dst: &mut RgbaImage) {
     let src = src.as_slice();
     let dst = dst.as_slice_mut();
 
@@ -146,7 +146,7 @@ pub fn process_map(s: &Settings, fx: &[FxPxl], src: &RgbaImage, dst: &mut RgbaIm
     let idx1 = (s.fxw * s.y_roi.max) as usize;
 
     for idx in idx0..idx1 {
-        let FxPxl { weights, index } = fx[idx];
+        let WarpPixel { weights, index } = fx[idx];
         dst[idx] = bilin_w(src, index as usize, s.fxw as usize, weights);
     }
 }

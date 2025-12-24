@@ -12,8 +12,8 @@ pub struct Painter {
     pub(crate) globals: Globals,
     img: RgbaImage,
     next: RgbaImage,
-    fx_hub: FlowMapHub,
-    fx: Option<(FlowMapSpec, FlowMap)>,
+    fx_hub: WarpMapHub,
+    fx: Option<(WarpSpec, WarpMap)>,
     needs_init: bool,
 }
 
@@ -43,7 +43,7 @@ impl Painter {
         Self {
             img: RgbaImage::black(shape),
             next: RgbaImage::black(shape),
-            fx_hub: FlowMapHub::new(),
+            fx_hub: WarpMapHub::new(),
             fx: None,
             needs_init: true,
             settings,

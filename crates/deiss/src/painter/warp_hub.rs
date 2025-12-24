@@ -1,9 +1,9 @@
 use crate::{
     painter::{
-        flow::{FlowMap, FlowMapGen, FlowMapSpec, FxPxl},
         globals::Globals,
         mode_blueprint_library::ModeBlueprintLibrary,
         settings::Settings,
+        warp::{WarpGen, WarpMap, WarpPixel, WarpSpec},
     },
     utils::*,
 };
@@ -14,19 +14,19 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub struct FlowMapHub {
-    current: Option<(FlowMapSpec, FlowMap)>,
-    next_spec: Option<FlowMapSpec>,
-    worker: FlowMapWorker,
+pub struct WarpMapHub {
+    current: Option<(WarpSpec, WarpMap)>,
+    next_spec: Option<WarpSpec>,
+    worker: WarpMapWorker,
     next_switch_time: Instant,
 }
 
-impl FlowMapHub {
+impl WarpMapHub {
     pub fn new() -> Self {
         Self {
             current: None,
             next_spec: None,
-            worker: FlowMapWorker::new(),
+            worker: WarpMapWorker::new(),
             next_switch_time: Instant::now(),
         }
     }
@@ -34,7 +34,7 @@ impl FlowMapHub {
     pub fn step(&mut self, s: &Settings, fx: &ModeBlueprintLibrary, g: &mut Globals) -> Result<()> {
         if self.worker.is_idle() {
             if self.next_switch_time < Instant::now() {
-                let spec = FlowMapSpec::generate(s, fx, g);
+                let spec = WarpSpec::generate(s, fx, g);
                 self.next_spec = Some(spec.clone());
                 self.worker.start(spec)?;
                 self.next_switch_time = Instant::now() + Duration::from_secs(3);
@@ -49,33 +49,33 @@ impl FlowMapHub {
         Ok(())
     }
 
-    pub fn fetch(&mut self) -> Option<(FlowMapSpec, FlowMap)> {
+    pub fn fetch(&mut self) -> Option<(WarpSpec, WarpMap)> {
         self.current.take()
     }
 }
 
-impl Drop for FlowMapHub {
+impl Drop for WarpMapHub {
     fn drop(&mut self) {
         self.worker.terminate();
     }
 }
 
-struct FlowMapWorker {
-    tx_worker_request: mpsc::Sender<FlowMapWorkerRequest>,
-    rx_worker_reply: mpsc::Receiver<FlowMapWorkerReply>,
-    state: FlowMapWorkerState,
+struct WarpMapWorker {
+    tx_worker_request: mpsc::Sender<WarpMapWorkerRequest>,
+    rx_worker_reply: mpsc::Receiver<WarpMapWorkerReply>,
+    state: WarpMapWorkerState,
     handle: Option<JoinHandle<()>>,
 }
 
-impl FlowMapWorker {
+impl WarpMapWorker {
     pub fn new() -> Self {
         let (tx_worker_request, rx_worker_request) = mpsc::channel();
         let (tx_worker_reply, rx_worker_reply) = mpsc::channel();
 
-        let state = FlowMapWorkerState::Idle;
+        let state = WarpMapWorkerState::Idle;
 
         let handle = std::thread::spawn(move || {
-            FlowMapWorkerThread::new(tx_worker_reply, rx_worker_request).run();
+            WarpMapWorkerThread::new(tx_worker_reply, rx_worker_request).run();
         });
 
         Self { tx_worker_request, rx_worker_reply, state, handle: Some(handle) }
@@ -83,70 +83,70 @@ impl FlowMapWorker {
 
     pub fn is_idle(&self) -> bool {
         match self.state {
-            FlowMapWorkerState::Idle => true,
+            WarpMapWorkerState::Idle => true,
             _ => false,
         }
     }
 
-    pub fn start(&mut self, spec: FlowMapSpec) -> Result<()> {
+    pub fn start(&mut self, spec: WarpSpec) -> Result<()> {
         match self.state {
-            FlowMapWorkerState::Idle => {
-                self.tx_worker_request.send(FlowMapWorkerRequest::Start(spec))?;
-                self.state = FlowMapWorkerState::Computing;
+            WarpMapWorkerState::Idle => {
+                self.tx_worker_request.send(WarpMapWorkerRequest::Start(spec))?;
+                self.state = WarpMapWorkerState::Computing;
                 Ok(())
             }
-            FlowMapWorkerState::Computing => {
+            WarpMapWorkerState::Computing => {
                 bail!("worker busy");
             }
         }
     }
 
-    pub fn retreive(&mut self) -> Result<Option<FlowMap>> {
+    pub fn retreive(&mut self) -> Result<Option<WarpMap>> {
         match self.state {
-            FlowMapWorkerState::Computing => match self.rx_worker_reply.try_recv() {
-                Ok(FlowMapWorkerReply::Finished(flow_map)) => {
-                    self.state = FlowMapWorkerState::Idle;
+            WarpMapWorkerState::Computing => match self.rx_worker_reply.try_recv() {
+                Ok(WarpMapWorkerReply::Finished(flow_map)) => {
+                    self.state = WarpMapWorkerState::Idle;
                     Ok(Some(flow_map))
                 }
                 Err(mpsc::TryRecvError::Empty) => Ok(None),
                 Err(mpsc::TryRecvError::Disconnected) => bail!("worker disconnected"),
             },
-            FlowMapWorkerState::Idle => Ok(None),
+            WarpMapWorkerState::Idle => Ok(None),
         }
     }
 
     pub fn terminate(&mut self) {
-        self.tx_worker_request.send(FlowMapWorkerRequest::Terminate).ok();
+        self.tx_worker_request.send(WarpMapWorkerRequest::Terminate).ok();
         if let Some(h) = self.handle.take() {
             h.join().ok();
         }
     }
 }
 
-enum FlowMapWorkerState {
+enum WarpMapWorkerState {
     Idle,
     Computing,
 }
 
 #[allow(clippy::large_enum_variant)]
-enum FlowMapWorkerRequest {
-    Start(FlowMapSpec),
+enum WarpMapWorkerRequest {
+    Start(WarpSpec),
     Terminate,
 }
 
-enum FlowMapWorkerReply {
-    Finished(Image<FxPxl>),
+enum WarpMapWorkerReply {
+    Finished(Image<WarpPixel>),
 }
 
-struct FlowMapWorkerThread {
-    rx_worker_request: mpsc::Receiver<FlowMapWorkerRequest>,
-    tx_worker_reply: mpsc::Sender<FlowMapWorkerReply>,
+struct WarpMapWorkerThread {
+    rx_worker_request: mpsc::Receiver<WarpMapWorkerRequest>,
+    tx_worker_reply: mpsc::Sender<WarpMapWorkerReply>,
 }
 
-impl FlowMapWorkerThread {
+impl WarpMapWorkerThread {
     pub fn new(
-        tx_worker_reply: mpsc::Sender<FlowMapWorkerReply>,
-        rx_worker_request: mpsc::Receiver<FlowMapWorkerRequest>,
+        tx_worker_reply: mpsc::Sender<WarpMapWorkerReply>,
+        rx_worker_request: mpsc::Receiver<WarpMapWorkerRequest>,
     ) -> Self {
         Self { tx_worker_reply, rx_worker_request }
     }
@@ -154,12 +154,12 @@ impl FlowMapWorkerThread {
     pub fn run(self) {
         loop {
             match self.rx_worker_request.try_recv() {
-                Ok(FlowMapWorkerRequest::Start(spec)) => {
-                    let mut fxgen = FlowMapGen::new(spec);
+                Ok(WarpMapWorkerRequest::Start(spec)) => {
+                    let mut fxgen = WarpGen::new(spec);
                     let fx = fxgen.run();
-                    self.tx_worker_reply.send(FlowMapWorkerReply::Finished(fx)).unwrap();
+                    self.tx_worker_reply.send(WarpMapWorkerReply::Finished(fx)).unwrap();
                 }
-                Ok(FlowMapWorkerRequest::Terminate) => break,
+                Ok(WarpMapWorkerRequest::Terminate) => break,
                 Err(mpsc::TryRecvError::Empty) => continue,
                 Err(mpsc::TryRecvError::Disconnected) => break,
             }
