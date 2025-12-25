@@ -106,7 +106,7 @@ impl State {
         let surface = Surface::new(gpu.clone(), window.clone())?;
         let renderer = Renderer::new(&gpu, &window);
 
-        let painter = Arc::new(Mutex::new(Painter::new(surface.size_as_shape())));
+        let painter = Arc::new(Mutex::new(Painter::new((480, 640).into())));
         // let listener = ConsoleAudioListener::new();
 
         let mut playback = Playback::new()?;
