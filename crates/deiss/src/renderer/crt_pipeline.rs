@@ -1,6 +1,6 @@
 use crate::{
     renderer::{Gpu, Shader, Texture, create_pipeline},
-    utils::{RgbaImage, Shape2, Vec2},
+    utils::{RgbaImage, Shape2, Vec2f},
 };
 use wgpu::util::DeviceExt;
 
@@ -8,7 +8,7 @@ use wgpu::util::DeviceExt;
 pub struct CrtShaderSettings {
     pub warp_enabled: bool,
     pub warp_strength: f32,
-    pub warp_xy: Vec2,
+    pub warp_xy: Vec2f,
     pub scanlines_enabled: bool,
     pub scanline_strength: f32,
     pub afterglow_enabled: bool,
@@ -20,7 +20,7 @@ impl Default for CrtShaderSettings {
         Self {
             warp_enabled: true,
             warp_strength: 0.75,
-            warp_xy: Vec2::new(0.3, 0.4),
+            warp_xy: Vec2f::new(0.3, 0.4),
             scanlines_enabled: true,
             scanline_strength: 0.75,
             afterglow_enabled: true,

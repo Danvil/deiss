@@ -13,7 +13,7 @@ const PROTECTIVE_FACTOR: f32 = 1.0; // min(640/FWX, 1)
 pub struct Marked<T, const N: usize>(T);
 
 impl<T: GeneralPixelTransform, const N: usize> GeneralPixelTransform for Marked<T, N> {
-    fn transform(&self, p: Vec2, c: Vec2, s: Vec2) -> Vec2 {
+    fn transform(&self, p: Vec2f, c: Vec2f, s: Vec2f) -> Vec2f {
         self.0.transform(p, c, s)
     }
 }
@@ -60,7 +60,7 @@ pub fn mode_3_tf(rand: &mut Minstd) -> Mode3Tf {
 pub struct Mode3Scale(f32);
 
 impl ScaleF for Mode3Scale {
-    fn scale(&self, _: Vec2) -> f32 {
+    fn scale(&self, _: Vec2f) -> f32 {
         self.0
     }
 }
@@ -78,7 +78,7 @@ pub fn mode_4_tf(rand: &mut Minstd) -> Mode4Tf {
 pub struct Mode4Scale;
 
 impl ScaleF for Mode4Scale {
-    fn scale(&self, p: Vec2) -> f32 {
+    fn scale(&self, p: Vec2f) -> f32 {
         let r = p.norm() * RMULT;
         0.9 + r * 0.0025 * 0.14
     }
@@ -107,7 +107,7 @@ pub struct Mode5Scale {
 }
 
 impl ScaleF for Mode5Scale {
-    fn scale(&self, p: Vec2) -> f32 {
+    fn scale(&self, p: Vec2f) -> f32 {
         let mut r = p.norm() * RMULT / 200.;
 
         if self.has_nuclide_effect {
@@ -125,14 +125,14 @@ impl ScaleF for Mode5Scale {
 /// Mode 6 uses custom motion vectors
 #[derive(Debug, Clone)]
 pub struct Mode6Tf {
-    c: [Vec2; 5],
+    c: [Vec2f; 5],
     ctype: [u32; 5],
-    c0: [Vec2; 5],
+    c0: [Vec2f; 5],
 }
 
 impl GeneralPixelTransform for Mode6Tf {
-    fn transform(&self, p: Vec2, _: Vec2, _: Vec2) -> Vec2 {
-        let mut t = Vec2::new(0., 0.);
+    fn transform(&self, p: Vec2f, _: Vec2f, _: Vec2f) -> Vec2f {
+        let mut t = Vec2f::new(0., 0.);
         let mut f = 0.;
 
         for n in 0..5 {
@@ -147,11 +147,11 @@ impl GeneralPixelTransform for Mode6Tf {
                 }
                 1 => {
                     let z = 1. / (dp_norm_sq.sqrt() + 0.01);
-                    t += Vec2::new(-dp.y, dp.x) * (2. * d * z);
+                    t += Vec2f::new(-dp.y, dp.x) * (2. * d * z);
                 }
                 2 => {
                     let z = 1. / (dp_norm_sq.sqrt() + 0.01);
-                    t += Vec2::new(dp.y, -dp.x) * (2. * d * z);
+                    t += Vec2f::new(dp.y, -dp.x) * (2. * d * z);
                 }
                 _ => unreachable!(),
             }
@@ -159,7 +159,7 @@ impl GeneralPixelTransform for Mode6Tf {
 
         let t_scale = if f > 0.000001 { 1.9 / f } else { 0. };
 
-        p + t * t_scale + Vec2::new(-0.1, 0.6)
+        p + t * t_scale + Vec2f::new(-0.1, 0.6)
     }
 }
 
@@ -169,7 +169,7 @@ pub fn mode_6_tf(rand: &mut Minstd) -> Mode6Tf {
 
     Mode6Tf {
         c: core::array::from_fn(|_| {
-            Vec2::new(
+            Vec2f::new(
                 rand.next_idx(10 * FXW) as f32 * 0.1,
                 YROI.min as f32 + rand.next_idx((YROI.max - YROI.min) * 10) as f32 * 0.1,
             )
@@ -179,7 +179,7 @@ pub fn mode_6_tf(rand: &mut Minstd) -> Mode6Tf {
             let d = rand.next_idx(628) as f32 * 0.01;
             let f = 1. + rand.next_idx(80) as f32 * 0.01;
             let (sd, cd) = d.sin_cos();
-            Vec2::new(cd, sd) * f
+            Vec2f::new(cd, sd) * f
         }),
     }
 }
@@ -208,7 +208,7 @@ pub struct Mode7Scale {
 }
 
 impl ScaleF for Mode7Scale {
-    fn scale(&self, p: Vec2) -> f32 {
+    fn scale(&self, p: Vec2f) -> f32 {
         let r = p.norm() * RMULT * self.f2;
         let scale = (self.f1 - r - 1.) * PROTECTIVE_FACTOR + 1.;
         let idx = (p.x + 1000.) as usize + (p.y + 1000.) as usize * 2000;
@@ -232,7 +232,7 @@ pub struct Mode8Scale {
 }
 
 impl ScaleF for Mode8Scale {
-    fn scale(&self, p: Vec2) -> f32 {
+    fn scale(&self, p: Vec2f) -> f32 {
         let r = p.norm() * RMULT;
         0.85 + 0.1 * (self.f1 * r.sqrt()).sin()
     }
@@ -256,7 +256,7 @@ pub struct Mode9Scale {
 }
 
 impl ScaleF for Mode9Scale {
-    fn scale(&self, p: Vec2) -> f32 {
+    fn scale(&self, p: Vec2f) -> f32 {
         let r = p.norm() * self.f2 * RMULT;
         (self.f1 - r - 1.) * PROTECTIVE_FACTOR + 1.
     }
@@ -269,8 +269,8 @@ impl ScaleF for Mode9Scale {
 pub struct Mode10Tf;
 
 impl GeneralPixelTransform for Mode10Tf {
-    fn transform(&self, p: Vec2, center: Vec2, shape: Vec2) -> Vec2 {
-        Vec2::new((p.x - center.x) * (1.03 + 0.03 * p.y / shape.y) + center.x, p.y * 1.04)
+    fn transform(&self, p: Vec2f, center: Vec2f, shape: Vec2f) -> Vec2f {
+        Vec2f::new((p.x - center.x) * (1.03 + 0.03 * p.y / shape.y) + center.x, p.y * 1.04)
     }
 }
 
@@ -301,7 +301,7 @@ pub fn mode_11_tf(rand: &mut Minstd) -> Mode11Tf {
 pub struct Mode12Tf;
 
 impl GeneralPixelTransform for Mode12Tf {
-    fn transform(&self, p: Vec2, center: Vec2, _: Vec2) -> Vec2 {
+    fn transform(&self, p: Vec2f, center: Vec2f, _: Vec2f) -> Vec2f {
         let nx = p.x - center.x;
         let dx = if nx < -0.5 {
             -(-nx).sqrt() + 0.9
@@ -310,7 +310,7 @@ impl GeneralPixelTransform for Mode12Tf {
         } else {
             0.
         };
-        Vec2::new(center.x + dx, p.y)
+        Vec2f::new(center.x + dx, p.y)
     }
 }
 
@@ -328,7 +328,7 @@ macro_rules! define_transform_enum {
         }
 
         impl GeneralPixelTransform for $enum_name {
-            fn transform(&self, p: Vec2, c: Vec2, s: Vec2) -> Vec2 {
+            fn transform(&self, p: Vec2f, c: Vec2f, s: Vec2f) -> Vec2f {
                 match self {
                     $(Self::$variant(tf) => tf.transform(p, c, s),)+
                 }

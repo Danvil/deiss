@@ -3,7 +3,7 @@ use core::f32;
 
 pub struct ShadeBobs {
     pub count: usize,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub floatframe: f32,
     pub micro_c: [[f32; 3]; 10],
     pub micro_f: [[f32; 4]; 10],
@@ -11,7 +11,7 @@ pub struct ShadeBobs {
 }
 
 impl ShadeBobs {
-    pub fn new(center: Vec2i32, floatframe: f32, rand: &mut Minstd) -> Self {
+    pub fn new(center: Vec2i, floatframe: f32, rand: &mut Minstd) -> Self {
         let mut micro_c = [[0.; 3]; 10];
         let mut micro_f = [[0.; 4]; 10];
         let mut micro_rad = [[0.; 4]; 10];

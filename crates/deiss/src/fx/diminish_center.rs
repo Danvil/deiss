@@ -3,13 +3,13 @@ use core::f32;
 
 pub struct DiminishCenter {
     pub y_roi: YRoi,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub center_mode: bool,
     pub center_dwindle: f32,
 }
 
 impl DiminishCenter {
-    pub fn new(center: Vec2i32, center_mode: bool, center_dwindle: f32, s: &Settings) -> Self {
+    pub fn new(center: Vec2i, center_mode: bool, center_dwindle: f32, s: &Settings) -> Self {
         Self { y_roi: s.y_roi, center, center_mode, center_dwindle }
     }
 }

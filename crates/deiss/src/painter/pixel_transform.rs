@@ -1,7 +1,7 @@
 use crate::utils::*;
 
 pub trait GeneralPixelTransform {
-    fn transform(&self, point: Vec2, center: Vec2, shape: Vec2) -> Vec2;
+    fn transform(&self, point: Vec2f, center: Vec2f, shape: Vec2f) -> Vec2f;
 }
 
 #[derive(Debug, Clone)]
@@ -16,14 +16,14 @@ impl<T> CenterTransform<T> {
 }
 
 impl<T: PixelTransform> GeneralPixelTransform for CenterTransform<T> {
-    fn transform(&self, point: Vec2, center: Vec2, _: Vec2) -> Vec2 {
+    fn transform(&self, point: Vec2f, center: Vec2f, _: Vec2f) -> Vec2f {
         self.inner.transform(point - center) + center
     }
 }
 
 /// Pixel coordinate transformation mainly used for motion fields
 pub trait PixelTransform {
-    fn transform(&self, p: Vec2) -> Vec2;
+    fn transform(&self, p: Vec2f) -> Vec2f;
 }
 
 /// Pixel transformation which rotates and then scales
@@ -31,7 +31,7 @@ pub trait PixelTransform {
 pub struct TurnScaleTransform {
     scale: f32,
     turn: f32,
-    rot: Rot2,
+    rot: Rot2f,
 }
 
 impl TurnScaleTransform {
@@ -46,12 +46,12 @@ impl TurnScaleTransform {
     }
 
     pub fn from_scale_turn(scale: f32, turn: f32) -> Self {
-        Self { scale, turn, rot: Rot2::from_angle(turn) }
+        Self { scale, turn, rot: Rot2f::from_angle(turn) }
     }
 }
 
 impl PixelTransform for TurnScaleTransform {
-    fn transform(&self, p: Vec2) -> Vec2 {
+    fn transform(&self, p: Vec2f) -> Vec2f {
         self.rot.transform(p) * self.scale
     }
 }
@@ -84,7 +84,7 @@ impl DitherTurnScaleTransform {
 }
 
 impl GeneralPixelTransform for DitherTurnScaleTransform {
-    fn transform(&self, p: Vec2, c: Vec2, s: Vec2) -> Vec2 {
+    fn transform(&self, p: Vec2f, c: Vec2f, s: Vec2f) -> Vec2f {
         if (p.x as u32) % 2 == (p.y as u32) % 2 {
             self.parts[0].transform(p, c, s)
         } else {
@@ -97,7 +97,7 @@ impl GeneralPixelTransform for DitherTurnScaleTransform {
 #[derive(Debug, Clone)]
 pub struct TurnVarScaleTransform<S> {
     turn: f32,
-    rot: Rot2,
+    rot: Rot2f,
     scale_f: S,
 }
 
@@ -109,7 +109,7 @@ impl<S> TurnVarScaleTransform<S> {
 
         turn *= 0.6;
 
-        Self { turn, rot: Rot2::from_angle(turn), scale_f }
+        Self { turn, rot: Rot2f::from_angle(turn), scale_f }
     }
 }
 
@@ -117,12 +117,12 @@ impl<S> PixelTransform for TurnVarScaleTransform<S>
 where
     S: ScaleF,
 {
-    fn transform(&self, p: Vec2) -> Vec2 {
+    fn transform(&self, p: Vec2f) -> Vec2f {
         self.rot.transform(p) * self.scale_f.scale(p)
     }
 }
 
 /// Coordinate-dependent scale function used by [TurnVarScaleTf]
 pub trait ScaleF {
-    fn scale(&self, p: Vec2) -> f32;
+    fn scale(&self, p: Vec2f) -> f32;
 }

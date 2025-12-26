@@ -2,12 +2,12 @@ use crate::{fx::Effect, painter::Globals, utils::*};
 use core::f32;
 
 pub struct SolarParticles {
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub count: usize,
 }
 
 impl SolarParticles {
-    pub fn new(center: Vec2i32, solar_max: u32, g: &Globals) -> Self {
+    pub fn new(center: Vec2i, solar_max: u32, g: &Globals) -> Self {
         let i = g.frame as f32;
 
         let solar_max = solar_max as f32;
@@ -62,7 +62,7 @@ impl Effect for SolarParticles {
     }
 }
 
-fn sample_disk(r: u32, rand: &mut Minstd) -> (Vec2i32, u32) {
+fn sample_disk(r: u32, rand: &mut Minstd) -> (Vec2i, u32) {
     let r2 = r * r;
     loop {
         let x = rand.next_idx(2 * r) as i32 - r as i32;
@@ -70,7 +70,7 @@ fn sample_disk(r: u32, rand: &mut Minstd) -> (Vec2i32, u32) {
         let c2 = (x * x + y * y) as u32;
         if c2 < r2 {
             let c = (c2 as f32).sqrt() as u32;
-            return (Vec2K::new(x, y), c);
+            return (Vec2::new(x, y), c);
         }
     }
 }

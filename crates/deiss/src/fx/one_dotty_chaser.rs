@@ -4,13 +4,13 @@ use std::sync::{Arc, Mutex};
 
 pub struct OneDottyChaser {
     pub y_roi: YRoi,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub time: f32,
     pub chasers: Arc<Mutex<Chasers>>,
 }
 
 impl OneDottyChaser {
-    pub fn new(center: Vec2i32, s: &Settings, g: &Globals) -> Self {
+    pub fn new(center: Vec2i, s: &Settings, g: &Globals) -> Self {
         Self {
             y_roi: s.y_roi,
             center,
@@ -25,7 +25,7 @@ impl Effect for OneDottyChaser {
         let s = img.cols() as f32 / 640.;
         let t = self.time;
 
-        let delta = Vec2::new(
+        let delta = Vec2f::new(
             64. * (t * 0.0613 + 33.).cos() + 55. * (t * 0.0708 + 15.).cos(),
             52. * (t * 0.0704 + 12.).cos() + 51. * (t * 0.0503 + 21.).cos(),
         );

@@ -3,14 +3,14 @@ use core::f32;
 
 pub struct TwoChasers {
     pub y_roi: YRoi,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub passes: usize,
     pub frame: f32,
     pub time_scale: f32,
 }
 
 impl TwoChasers {
-    pub fn new(center: Vec2i32, passes: usize, s: &Settings, g: &Globals) -> Self {
+    pub fn new(center: Vec2i, passes: usize, s: &Settings, g: &Globals) -> Self {
         Self {
             y_roi: s.y_roi,
             center,
@@ -32,12 +32,12 @@ impl Effect for TwoChasers {
 
             for pass in 0..self.passes {
                 let delta = if pass == 0 {
-                    Vec2::new(
+                    Vec2f::new(
                         74. * (t * 0.1102 + 10.).cos() + 65. * (t * 0.1312 + 20.).cos(),
                         54. * (t * 0.1204 + 40.).cos() + 55. * (t * 0.1715 + 30.).cos(),
                     )
                 } else {
-                    Vec2::new(
+                    Vec2f::new(
                         64. * (t * 0.1213 + 33.).cos() + 55. * (t * 0.1408 + 15.).cos(),
                         52. * (t * 0.1304 + 12.).cos() + 51. * (t * 0.1103 + 21.).cos(),
                     )

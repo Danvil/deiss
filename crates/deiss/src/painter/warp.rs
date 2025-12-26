@@ -14,7 +14,7 @@ pub struct WarpSpec {
     pub effects: Effects,
     pub mode: ModeId,
     pub waveform: WaveformId,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub weightsum: f32,
     pub damping: f32,
     pub tf: AnyTransform,
@@ -52,7 +52,7 @@ impl WarpSpec {
             effects,
             mode,
             waveform,
-            center: Vec2i32::new(gxc, gyc),
+            center: Vec2i::new(gxc, gyc),
             weightsum,
             damping,
             tf,
@@ -82,7 +82,7 @@ impl WarpGen {
 
 pub fn bake<M: GeneralPixelTransform>(
     s: &Settings,
-    center: Vec2,
+    center: Vec2f,
     weightsum_factor: f32,
     damping: f32,
     mode: &M,
@@ -93,10 +93,10 @@ pub fn bake<M: GeneralPixelTransform>(
     // TODO original varies this based on resolution
     let weightsum_res_adjusted = weightsum_factor * 252.5;
 
-    let shape = Vec2::new(s.fxw as f32, s.fxh as f32);
+    let shape = Vec2f::new(s.fxw as f32, s.fxh as f32);
 
     Image::from_fn((s.fxh, s.fxw).into(), |(i, j)| {
-        let pi = Vec2 { x: j as f32, y: i as f32 };
+        let pi = Vec2f { x: j as f32, y: i as f32 };
 
         let p2 = mode.transform(pi, center, shape);
 

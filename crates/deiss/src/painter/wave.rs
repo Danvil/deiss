@@ -1,6 +1,6 @@
 use crate::{
     painter::{Globals, ModeId, Settings, WaveformId, color_gen},
-    utils::{Rgba, RgbaImage, Vec2i32},
+    utils::{Rgba, RgbaImage, Vec2i},
 };
 
 pub struct Wave {
@@ -22,7 +22,7 @@ impl Wave {
     pub fn render(
         &mut self,
         img: &mut RgbaImage,
-        center: Vec2i32,
+        center: Vec2i,
         mode: ModeId,
         waveform: WaveformId,
         s: &Settings,

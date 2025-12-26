@@ -3,12 +3,12 @@ use core::f32;
 
 pub struct SnackBar {
     pub y_roi: YRoi,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub frame: [f32; 3],
 }
 
 impl SnackBar {
-    pub fn new(center: Vec2i32, s: &Settings, g: &Globals) -> Self {
+    pub fn new(center: Vec2i, s: &Settings, g: &Globals) -> Self {
         let speed_mult = 0.6;
         let chromatic_dispersion = 4.;
 
@@ -33,12 +33,12 @@ impl Effect for SnackBar {
         for ch in 0..3 {
             let t = self.frame[ch] * 0.55 / (0.08 * 20.);
 
-            let d1 = Vec2::new(
+            let d1 = Vec2f::new(
                 16. * (t * 0.1102 + 10.).cos() + 15. * (t * 0.1312 + 20.).cos(),
                 15. * (t * 0.1204 + 40.).cos() + 10. * (t * 0.1715 + 30.).cos(),
             );
 
-            let d2 = Vec2::new(
+            let d2 = Vec2f::new(
                 14. * (t * 0.1213 + 33.).cos() + 13. * (t * 0.1408 + 15.).cos(),
                 13. * (t * 0.1304 + 12.).cos() + 11. * (t * 0.1103 + 21.).cos(),
             );

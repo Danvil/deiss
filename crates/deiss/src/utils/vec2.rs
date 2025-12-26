@@ -1,29 +1,29 @@
 use core::ops;
 
-pub type Vec2 = Vec2K<f32>;
+pub type Vec2f = Vec2<f32>;
 
-pub type Vec2i32 = Vec2K<i32>;
+pub type Vec2i = Vec2<i32>;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Vec2K<K> {
+pub struct Vec2<K> {
     pub x: K,
     pub y: K,
 }
 
-impl<K> Vec2K<K> {
+impl<K> Vec2<K> {
     pub fn new(x: K, y: K) -> Self {
-        Vec2K { x, y }
+        Vec2 { x, y }
     }
 
-    pub fn cast<S>(&self) -> Vec2K<S>
+    pub fn cast<S>(&self) -> Vec2<S>
     where
         K: Copy + CoeffCast<S>,
     {
-        Vec2K { x: self.x.cast(), y: self.y.cast() }
+        Vec2 { x: self.x.cast(), y: self.y.cast() }
     }
 }
 
-impl Vec2K<f32> {
+impl Vec2<f32> {
     pub fn norm_squared(&self) -> f32 {
         self.x * self.x + self.y * self.y
     }
@@ -49,44 +49,44 @@ impl CoeffCast<f32> for i32 {
     }
 }
 
-impl<K> ops::Mul<K> for Vec2K<K>
+impl<K> ops::Mul<K> for Vec2<K>
 where
     K: Copy + ops::Mul<K, Output = K>,
 {
-    type Output = Vec2K<K>;
+    type Output = Vec2<K>;
 
-    fn mul(self, scalar: K) -> Vec2K<K> {
-        Vec2K { x: self.x * scalar, y: self.y * scalar }
+    fn mul(self, scalar: K) -> Vec2<K> {
+        Vec2 { x: self.x * scalar, y: self.y * scalar }
     }
 }
 
-impl<K> ops::Sub for Vec2K<K>
+impl<K> ops::Sub for Vec2<K>
 where
     K: Copy + ops::Sub<K, Output = K>,
 {
-    type Output = Vec2K<K>;
+    type Output = Vec2<K>;
 
-    fn sub(self, other: Vec2K<K>) -> Vec2K<K> {
-        Vec2K { x: self.x - other.x, y: self.y - other.y }
+    fn sub(self, other: Vec2<K>) -> Vec2<K> {
+        Vec2 { x: self.x - other.x, y: self.y - other.y }
     }
 }
 
-impl<K> ops::Add for Vec2K<K>
+impl<K> ops::Add for Vec2<K>
 where
     K: Copy + ops::Add<K, Output = K>,
 {
-    type Output = Vec2K<K>;
+    type Output = Vec2<K>;
 
-    fn add(self, other: Vec2K<K>) -> Vec2K<K> {
-        Vec2K { x: self.x + other.x, y: self.y + other.y }
+    fn add(self, other: Vec2<K>) -> Vec2<K> {
+        Vec2 { x: self.x + other.x, y: self.y + other.y }
     }
 }
 
-impl<K> ops::AddAssign for Vec2K<K>
+impl<K> ops::AddAssign for Vec2<K>
 where
     K: Copy + ops::AddAssign<K>,
 {
-    fn add_assign(&mut self, other: Vec2K<K>) {
+    fn add_assign(&mut self, other: Vec2<K>) {
         self.x += other.x;
         self.y += other.y;
     }

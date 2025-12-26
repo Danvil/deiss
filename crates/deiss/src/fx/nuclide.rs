@@ -3,7 +3,7 @@ use core::f32;
 
 pub struct Nuclide {
     pub nodes: u32,
-    pub center: Vec2i32,
+    pub center: Vec2i,
     pub phase: f32,
     pub r: f32,
     pub rad: f32,
@@ -11,7 +11,7 @@ pub struct Nuclide {
 }
 
 impl Nuclide {
-    pub fn new_nuclide(center: Vec2i32, s: &Settings, g: &mut Globals) -> Self {
+    pub fn new_nuclide(center: Vec2i, s: &Settings, g: &mut Globals) -> Self {
         // skip 11/12 runs
         let nodes = if g.rand.next_idx(12) == 0 { 3 + g.rand.next_idx(5) } else { 0 };
 
@@ -34,7 +34,7 @@ impl Nuclide {
         Self { center, nodes, rad, r, phase, col }
     }
 
-    pub fn new_beat_dots(center: Vec2i32, s: &Settings, g: &mut Globals) -> Self {
+    pub fn new_beat_dots(center: Vec2i, s: &Settings, g: &mut Globals) -> Self {
         // skip if volume too low
         let nodes =
             if g.vol.current() <= g.avg_vol_narrow * 1.1 { 0 } else { 3 + g.rand.next_idx(5) };
@@ -66,7 +66,7 @@ impl Effect for Nuclide {
         for n in 0..self.nodes {
             let (th_cos, th_sin) =
                 ((n as f32) / (self.nodes as f32) * f32::consts::TAU + self.phase).sin_cos();
-            let p = self.center + (Vec2::new(th_cos, th_sin) * self.rad).cast();
+            let p = self.center + (Vec2f::new(th_cos, th_sin) * self.rad).cast();
 
             for x in -RAD..RAD {
                 for y in -RAD..RAD {
