@@ -1,13 +1,14 @@
+use crate::{renderer::Gpu, utils::Shape2};
 use egui_wgpu::RendererOptions;
 
-pub struct EguiRenderer {
+pub struct EguiPipeline {
     state: egui_winit::State,
     scale_factor: f32,
     renderer: egui_wgpu::Renderer,
     frame_started: bool,
 }
 
-impl EguiRenderer {
+impl EguiPipeline {
     pub fn context(&self) -> &egui::Context {
         self.state.egui_ctx()
     }
@@ -16,7 +17,7 @@ impl EguiRenderer {
         device: &wgpu::Device,
         output_color_format: wgpu::TextureFormat,
         window: &winit::window::Window,
-    ) -> EguiRenderer {
+    ) -> EguiPipeline {
         let egui_context = egui::Context::default();
 
         let egui_state = egui_winit::State::new(
@@ -30,7 +31,7 @@ impl EguiRenderer {
         let egui_renderer =
             egui_wgpu::Renderer::new(device, output_color_format, RendererOptions::default());
 
-        EguiRenderer {
+        EguiPipeline {
             state: egui_state,
             scale_factor: 1.,
             renderer: egui_renderer,
@@ -52,6 +53,40 @@ impl EguiRenderer {
 
     pub fn scale_factor(&self) -> f32 {
         self.scale_factor
+    }
+
+    pub fn render(
+        &mut self,
+        gpu: &Gpu,
+        texture_view: wgpu::TextureView,
+        surface_shape: Shape2,
+        win: &winit::window::Window,
+        f: impl FnOnce(&egui::Context),
+    ) {
+        let mut encoder = gpu.device().create_command_encoder(&Default::default());
+
+        // render EGUI: render over present
+        {
+            self.begin_frame(&win);
+
+            f(self.context());
+
+            let screen_desc = egui_wgpu::ScreenDescriptor {
+                size_in_pixels: [surface_shape.cols(), surface_shape.rows()],
+                pixels_per_point: win.scale_factor() as f32 * self.scale_factor(),
+            };
+
+            self.end_frame_and_draw(
+                gpu.device(),
+                gpu.queue(),
+                &mut encoder,
+                win,
+                &texture_view,
+                screen_desc,
+            );
+        }
+
+        gpu.queue().submit([encoder.finish()]);
     }
 
     pub fn begin_frame(&mut self, window: &winit::window::Window) {

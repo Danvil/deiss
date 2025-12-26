@@ -104,11 +104,14 @@ impl State {
     pub async fn new(window: Arc<Window>, config: SharedConfig) -> Result<Self> {
         let gpu = Arc::new(Gpu::new().await?);
         let surface = Surface::new(gpu.clone(), window.clone())?;
-        let renderer = Renderer::new(&gpu, &window);
 
-        let painter = Arc::new(Mutex::new(Painter::new((480, 640).into())));
+        let shape = (480, 640).into();
+
+        let renderer = Renderer::new(&gpu, &window, shape, surface.size_as_shape());
+
+        let painter = Arc::new(Mutex::new(Painter::new(shape)));
+
         // let listener = ConsoleAudioListener::new();
-
         let mut playback = Playback::new()?;
         playback.set_listener(painter.clone());
 
