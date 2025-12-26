@@ -111,7 +111,8 @@ impl VolBuffer {
         self.total += vol - self.past[self.index];
         self.past[self.index] = vol;
 
-        // every time we wrap around recompute total to avoid gradual slip due to numeric instability
+        // every time we wrap around recompute total to avoid gradual slip due to numeric
+        // instability
         if self.index == 0 {
             self.total = self.past.iter().sum::<f32>();
         }

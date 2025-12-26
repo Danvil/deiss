@@ -304,7 +304,7 @@ pub fn mode_11_tf(rand: &mut Minstd) -> Mode11Tf {
 
 // === Mode 12
 
-/// Mode 12 uses custom motion vectors
+/// "Sideway splitter" with custom vectors
 #[derive(Debug, Clone)]
 pub struct Mode12Tf;
 

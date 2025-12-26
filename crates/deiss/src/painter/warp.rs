@@ -15,6 +15,7 @@ pub struct WarpSpec {
     pub mode: ModeId,
     pub waveform: WaveformId,
     pub center: Vec2i32,
+    pub weightsum: f32,
     pub damping: f32,
     pub tf: AnyTransform,
 }
@@ -40,12 +41,19 @@ impl WarpSpec {
 
         let tf = fx[mode].generate_transform(&mut g.rand);
 
+        let weightsum = match mode {
+            ModeId(12) => 0.98,
+            ModeId(16) => 248. / 253.,
+            _ => 1.,
+        };
+
         WarpSpec {
             settings: s.clone(),
             effects,
             mode,
             waveform,
             center: Vec2i32::new(gxc, gyc),
+            weightsum,
             damping,
             tf,
         }
@@ -62,23 +70,28 @@ impl WarpGen {
     }
 
     pub fn run(&mut self) -> WarpMap {
-        bake(&self.spec.settings, self.spec.center.cast(), self.spec.damping, &self.spec.tf)
+        bake(
+            &self.spec.settings,
+            self.spec.center.cast(),
+            self.spec.weightsum,
+            self.spec.damping,
+            &self.spec.tf,
+        )
     }
 }
 
 pub fn bake<M: GeneralPixelTransform>(
     s: &Settings,
     center: Vec2,
+    weightsum_factor: f32,
     damping: f32,
     mode: &M,
 ) -> Image<WarpPixel> {
     let s_fxw_minus_once = (s.fxw - 1) as f32;
     // let half_fxw = s.fxw as f32 * 0.5;
 
-    let weightsum_res_adjusted = match (s.fxw, s.fxh) {
-        (640, 480) => 252.,
-        _ => 255.,
-    };
+    // TODO original varies this based on resolution
+    let weightsum_res_adjusted = weightsum_factor * 252.5;
 
     let shape = Vec2::new(s.fxw as f32, s.fxh as f32);
 
