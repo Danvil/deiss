@@ -28,8 +28,10 @@ impl WarpSpec {
         let effects =
             fx[mode].effect_freq.sample((effects_min as usize, effects_max as usize), &mut g.rand);
 
-        let gxc = ((s.fxw / 2 - 1) as f32 + g.rand.next_idx(60) as f32 - 30.) as i32;
-        let gyc = ((s.fxh / 2 - 1) as f32 + g.rand.next_idx(30) as f32 - 15.) as i32;
+        let center = Vec2::new(
+            ((s.fxw / 2 - 1) + g.rand.next_idx(60) - 30) as i32,
+            ((s.fxh / 2 - 1) + g.rand.next_idx(30) - 15) as i32,
+        );
 
         let damping = g.suggested_dampening.clamp(0.50, 1.00)
             * if fx[mode].motion_dampened { 0.5 } else { 1.0 }
@@ -47,16 +49,7 @@ impl WarpSpec {
             _ => 1.,
         };
 
-        WarpSpec {
-            settings: s.clone(),
-            effects,
-            mode,
-            waveform,
-            center: Vec2i::new(gxc, gyc),
-            weightsum,
-            damping,
-            tf,
-        }
+        WarpSpec { settings: s.clone(), effects, mode, waveform, center, weightsum, damping, tf }
     }
 }
 

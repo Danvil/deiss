@@ -29,7 +29,7 @@ impl Grid {
 impl Effect for Grid {
     fn render(&self, img: &mut RgbaImage, _: &mut Minstd) {
         for y in (self.y_roi.min + 2..self.y_roi.max - 2).step_by(self.y_inc) {
-            for x in (0..img.cols()).step_by(self.x_inc) {
+            for x in (0..img.cols() - 1).step_by(self.x_inc) {
                 if self.fat_pixels {
                     saturate_rgb(&mut img[(y, x)], self.val);
                     saturate_rgb(&mut img[(y, x + 1)], self.val);

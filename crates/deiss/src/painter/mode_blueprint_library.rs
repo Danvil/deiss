@@ -3,14 +3,11 @@ use core::ops;
 use std::collections::HashMap;
 
 pub struct ModeBlueprintLibrary {
-    pub gf: [f32; 6],
     pub mode_info: HashMap<ModeId, ModeBlueprint>,
 }
 
 impl ModeBlueprintLibrary {
     pub fn new(g: &mut Globals) -> Self {
-        let gf = core::array::from_fn(|_| g.rand.next_01_prom() * 0.01 + 0.02);
-
         let mut mode_info = HashMap::new();
 
         mode_info.insert(
@@ -232,7 +229,7 @@ impl ModeBlueprintLibrary {
             mi.effect_freq[EffectKind::Grid] = (mi.effect_freq[EffectKind::Grid] + 8).min(1000);
         }
 
-        Self { gf, mode_info }
+        Self { mode_info }
     }
 }
 
