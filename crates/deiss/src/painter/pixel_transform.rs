@@ -59,12 +59,12 @@ impl PixelTransform for TurnScaleTransform {
 /// TODO
 #[derive(Debug, Clone)]
 pub struct DitherTurnScaleTransform {
-    parts: [TurnScaleTransform; 2],
+    parts: [CenterTransform<TurnScaleTransform>; 2],
 }
 
 impl DitherTurnScaleTransform {
     pub fn from_scale_turn(parts: [TurnScaleTransform; 2]) -> Self {
-        Self { parts }
+        Self { parts: parts.map(|p| CenterTransform::new(p)) }
     }
 
     pub fn from_scale_turn_raw(scale: [f32; 2], mut turn: [f32; 2], rand: &mut Minstd) -> Self {
@@ -83,12 +83,12 @@ impl DitherTurnScaleTransform {
     }
 }
 
-impl PixelTransform for DitherTurnScaleTransform {
-    fn transform(&self, p: Vec2) -> Vec2 {
+impl GeneralPixelTransform for DitherTurnScaleTransform {
+    fn transform(&self, p: Vec2, c: Vec2, s: Vec2) -> Vec2 {
         if (p.x as u32) % 2 == (p.y as u32) % 2 {
-            self.parts[0].transform(p)
+            self.parts[0].transform(p, c, s)
         } else {
-            self.parts[1].transform(p)
+            self.parts[1].transform(p, c, s)
         }
     }
 }

@@ -20,7 +20,7 @@ impl<T: GeneralPixelTransform, const N: usize> GeneralPixelTransform for Marked<
 
 // === Mode 1
 
-pub type Mode1Tf = Marked<CenterTransform<DitherTurnScaleTransform>, 1>;
+pub type Mode1Tf = Marked<DitherTurnScaleTransform, 1>;
 
 pub fn mode_1_tf(rand: &mut Minstd) -> Mode1Tf {
     let scale1 = 0.985 - 0.12 * rand.next_01_prom().powi(2);
@@ -33,11 +33,7 @@ pub fn mode_1_tf(rand: &mut Minstd) -> Mode1Tf {
         turn1 *= -1.;
     }
 
-    Marked(CenterTransform::new(DitherTurnScaleTransform::from_scale_turn_raw(
-        [scale1, scale2],
-        [turn1, turn2],
-        rand,
-    )))
+    Marked(DitherTurnScaleTransform::from_scale_turn_raw([scale1, scale2], [turn1, turn2], rand))
 }
 
 // === Mode 2
@@ -284,7 +280,7 @@ pub fn mode_10_tf() -> Mode10Tf {
 
 // === Mode 11
 
-pub type Mode11Tf = Marked<CenterTransform<DitherTurnScaleTransform>, 11>;
+pub type Mode11Tf = Marked<DitherTurnScaleTransform, 11>;
 
 pub fn mode_11_tf(rand: &mut Minstd) -> Mode11Tf {
     let mut scale1 = 1.008 + 0.008 * rand.next_01_prom();
@@ -295,11 +291,7 @@ pub fn mode_11_tf(rand: &mut Minstd) -> Mode11Tf {
     turn2 *= 0.1;
     scale1 *= 0.99;
     scale2 *= 1.01;
-    Marked(CenterTransform::new(DitherTurnScaleTransform::from_scale_turn_raw(
-        [scale1, scale2],
-        [turn1, turn2],
-        rand,
-    )))
+    Marked(DitherTurnScaleTransform::from_scale_turn_raw([scale1, scale2], [turn1, turn2], rand))
 }
 
 // === Mode 12
