@@ -1,4 +1,4 @@
-use crate::{painter::*, utils::*};
+use crate::{painter::*, renderer::CrtShaderSettings, utils::*};
 
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -10,6 +10,7 @@ pub struct Settings {
     pub gf: [f32; 6],
     pub mode_prefs: ModePrefs,
     pub waveform_prefs: WaveformPrefs,
+    pub crt_shader_settings: CrtShaderSettings,
 }
 
 impl Settings {

@@ -2,6 +2,7 @@ use crate::{
     audio::{AudioListener, AudioSamples},
     fx::{self, Effect},
     painter::*,
+    renderer::CrtShaderSettings,
     utils::*,
 };
 use std::{f32, mem};
@@ -38,6 +39,7 @@ impl Painter {
             gf: generate_gf(&mut globals.rand),
             mode_prefs: ModePrefs::new(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
             waveform_prefs: WaveformPrefs::default(),
+            crt_shader_settings: CrtShaderSettings::default(),
         };
 
         let library = ModeBlueprintLibrary::new(&mut globals);
@@ -57,6 +59,10 @@ impl Painter {
 
     pub fn image(&self) -> &RgbaImage {
         &self.img
+    }
+
+    pub fn settings(&self) -> &Settings {
+        &self.settings
     }
 
     pub fn on_render(&mut self) {

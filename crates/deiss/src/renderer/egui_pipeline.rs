@@ -58,7 +58,7 @@ impl EguiPipeline {
     pub fn render(
         &mut self,
         gpu: &Gpu,
-        texture_view: wgpu::TextureView,
+        texture_view: &wgpu::TextureView,
         surface_shape: Shape2,
         win: &winit::window::Window,
         f: impl FnOnce(&egui::Context),
@@ -81,7 +81,7 @@ impl EguiPipeline {
                 gpu.queue(),
                 &mut encoder,
                 win,
-                &texture_view,
+                texture_view,
                 screen_desc,
             );
         }

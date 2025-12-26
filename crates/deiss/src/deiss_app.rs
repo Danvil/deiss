@@ -144,14 +144,15 @@ impl State {
 
         self.renderer.render_img(
             &self.gpu,
-            texture_view.clone(),
+            &texture_view,
             self.surface.size_as_shape(),
             painter.image(),
+            painter.settings(),
         );
 
         self.renderer.render_gui(
             &self.gpu,
-            texture_view,
+            &texture_view,
             self.surface.size_as_shape(),
             &self.window,
             |ctx| {

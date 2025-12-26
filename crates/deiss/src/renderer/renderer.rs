@@ -1,22 +1,26 @@
 use crate::{
-    renderer::{BlitImagePipeline, EguiPipeline, Gpu},
+    painter::Settings,
+    renderer::{CrtPipeline, EguiPipeline, Gpu, PresentPipeline},
     utils::{RgbaImage, Shape2},
 };
 use winit::{event::WindowEvent, window::Window};
 
 pub struct Renderer {
-    blit_image_pipeline: BlitImagePipeline,
+    crt_pipeline: CrtPipeline,
+    present_pipeline: PresentPipeline,
     egui_pipeline: EguiPipeline,
 }
 
 impl Renderer {
     pub fn new(gpu: &Gpu, window: &Window, paint_shape: Shape2, display_shape: Shape2) -> Self {
-        let blit_image_pipeline = BlitImagePipeline::new(gpu, paint_shape);
+        let crt_pipeline = CrtPipeline::new(gpu, paint_shape, display_shape);
+
+        let present_pipeline = PresentPipeline::new(gpu);
 
         let egui_pipeline =
             EguiPipeline::new(gpu.device(), wgpu::TextureFormat::Bgra8UnormSrgb, window);
 
-        Self { blit_image_pipeline, egui_pipeline }
+        Self { crt_pipeline, present_pipeline, egui_pipeline }
     }
 
     pub fn handle_input(
@@ -30,13 +34,21 @@ impl Renderer {
     pub fn render_img(
         &mut self,
         gpu: &Gpu,
-        texture_view: wgpu::TextureView,
-        surface_shape: Shape2,
+        texture_view: &wgpu::TextureView,
+        display_shape: Shape2,
         image: &RgbaImage,
+        settings: &Settings,
     ) {
         let mut encoder = gpu.device().create_command_encoder(&Default::default());
 
-        self.blit_image_pipeline.render(gpu, &mut encoder, texture_view, surface_shape, image);
+        self.crt_pipeline.render(
+            gpu,
+            &mut encoder,
+            image,
+            display_shape,
+            &settings.crt_shader_settings,
+        );
+        self.present_pipeline.render(gpu, &mut encoder, self.crt_pipeline.output(), texture_view);
 
         gpu.queue().submit([encoder.finish()]);
     }
@@ -44,7 +56,7 @@ impl Renderer {
     pub fn render_gui(
         &mut self,
         gpu: &Gpu,
-        texture_view: wgpu::TextureView,
+        texture_view: &wgpu::TextureView,
         surface_shape: Shape2,
         win: &Window,
         f: impl FnOnce(&egui::Context),

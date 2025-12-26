@@ -1,15 +1,18 @@
-use crate::{painter::*, utils::*};
+use crate::{painter::*, renderer::CrtShaderSettings, utils::*};
 
 /// Default guid
 pub fn deiss_gui(ctx: &egui::Context, settings: &mut Settings, globals: &mut Globals) {
     egui::Window::new("DEISS").resizable(true).vscroll(true).default_open(true).show(ctx, |ui| {
         egui::CollapsingHeader::new("Mode Selection")
-            .default_open(true)
+            .default_open(false)
             .show(ui, |ui| mode_prefs_gui(ui, &mut settings.mode_prefs));
         egui::CollapsingHeader::new("Waveform Selection")
-            .default_open(true)
+            .default_open(false)
             .show(ui, |ui| waveform_prefs_gui(ui, &mut settings.waveform_prefs));
-        egui::CollapsingHeader::new("Detail").default_open(true).show(ui, |ui| {
+        egui::CollapsingHeader::new("CRT Shader")
+            .default_open(true)
+            .show(ui, |ui| crt_shader_gui(ui, &mut settings.crt_shader_settings));
+        egui::CollapsingHeader::new("Detail").default_open(false).show(ui, |ui| {
             egui::CollapsingHeader::new("GF")
                 .default_open(true)
                 .show(ui, |ui| settings_gf_gui(ui, &mut settings.gf, &mut globals.rand));
@@ -112,6 +115,34 @@ fn waveform_prefs_gui(ui: &mut egui::Ui, waveform_prefs: &mut WaveformPrefs) {
     if new_priority != current_priority {
         waveform_prefs.set_priority(new_priority);
     }
+}
+
+fn crt_shader_gui(ui: &mut egui::Ui, settings: &mut CrtShaderSettings) {
+    ui.checkbox(&mut settings.warp_enabled, "Warp Enabled");
+    ui.add_enabled(
+        settings.warp_enabled,
+        egui::Slider::new(&mut settings.warp_strength, 0.0..=1.0).text("Warp Strength"),
+    );
+    ui.add_enabled(
+        settings.warp_enabled,
+        egui::Slider::new(&mut settings.warp_xy.x, 0.0..=1.0).text("Warp X"),
+    );
+    ui.add_enabled(
+        settings.warp_enabled,
+        egui::Slider::new(&mut settings.warp_xy.y, 0.0..=1.0).text("Warp Y"),
+    );
+
+    ui.checkbox(&mut settings.scanlines_enabled, "Scanlines Enabled");
+    ui.add_enabled(
+        settings.scanlines_enabled,
+        egui::Slider::new(&mut settings.scanline_strength, 0.0..=1.0).text("Scan"),
+    );
+
+    ui.checkbox(&mut settings.afterglow_enabled, "Afterglow Enabled");
+    ui.add_enabled(
+        settings.afterglow_enabled,
+        egui::Slider::new(&mut settings.afterglow, 0.0..=1.0).text("Afterglow"),
+    );
 }
 
 /// Show GF values and allow to recompute
