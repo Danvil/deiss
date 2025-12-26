@@ -8,6 +8,15 @@ impl Rgba {
     pub const BLACK: Self = Self([0, 0, 0, 255]);
     pub const WHITE: Self = Self([255, 255, 255, 255]);
 
+    pub fn from_f3(v: [f32; 3]) -> Self {
+        Self([
+            v[0].clamp(0., 255.) as u8,
+            v[1].clamp(0., 255.) as u8,
+            v[2].clamp(0., 255.) as u8,
+            255,
+        ])
+    }
+
     pub fn scaled(&self, scale: f32) -> Self {
         Self([
             (self.0[0] as f32 * scale) as u8,

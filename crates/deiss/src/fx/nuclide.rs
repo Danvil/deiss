@@ -21,13 +21,15 @@ impl Nuclide {
 
         let rad = (34 + g.rand.next_idx(8)) as f32;
 
-        let i = g.frame as f32 + g.chaser_offset;
-        let f = 7. * (i * 0.007 + 29.).sin() + 5. * (i * 0.0057 + 27.).cos();
-        let col = [
-            0.5 + 0.25 * (i * s.gf[0] + 20. - f).sin() + 0.25 * (i * s.gf[3] + 17. + f).cos(),
-            0.5 + 0.25 * (i * s.gf[1] + 42. + f).sin() + 0.25 * (i * s.gf[4] + 26. - f).cos(),
-            0.5 + 0.25 * (i * s.gf[2] + 57. - f).sin() + 0.25 * (i * s.gf[5] + 35. + f).cos(),
-        ];
+        let t = g.frame as f32 + g.chaser_offset;
+        let f = 7. * (t * 0.007 + 29.).sin() + 5. * (t * 0.0057 + 27.).cos();
+        let dat = color_gen(s.gf, f, t, [0.25, 0.25], [20., 17., 42., 26., 57., 35.]);
+        let col = [0.50 + dat[0] + dat[1], 0.5 + dat[2] + dat[3], 0.5 + dat[4] + dat[5]];
+        // let col = [
+        //     0.5 + 0.25 * (t * s.gf[0] + 20. - f).sin() + 0.25 * (t * s.gf[3] + 17. + f).cos(),
+        //     0.5 + 0.25 * (t * s.gf[1] + 42. + f).sin() + 0.25 * (t * s.gf[4] + 26. - f).cos(),
+        //     0.5 + 0.25 * (t * s.gf[2] + 57. - f).sin() + 0.25 * (t * s.gf[5] + 35. + f).cos(),
+        // ];
 
         Self { center, nodes, rad, r, phase, col }
     }
@@ -43,13 +45,15 @@ impl Nuclide {
 
         let rad = (34 + g.rand.next_idx(8)) as f32 * ((s.fxw as f32) / 1024.).max(1.);
 
-        let i = g.frame as f32 + g.chaser_offset;
-        let f = 7. * (i * 0.007 + 29.).sin() + 5. * (i * 0.0057 + 27.).cos();
-        let col = [
-            0.58 + 0.21 * (i * s.gf[0] + 20. - f).sin() + 0.21 * (i * s.gf[3] + 17. + f).cos(),
-            0.58 + 0.21 * (i * s.gf[1] + 42. + f).sin() + 0.21 * (i * s.gf[4] + 26. - f).cos(),
-            0.58 + 0.21 * (i * s.gf[2] + 57. - f).sin() + 0.21 * (i * s.gf[5] + 35. + f).cos(),
-        ];
+        let t = g.frame as f32 + g.chaser_offset;
+        let f = 7. * (t * 0.007 + 29.).sin() + 5. * (t * 0.0057 + 27.).cos();
+        let dat = color_gen(s.gf, f, t, [0.21, 0.21], [20., 17., 42., 26., 57., 35.]);
+        let col = [0.58 + dat[0] + dat[1], 0.5 + dat[2] + dat[3], 0.5 + dat[4] + dat[5]];
+        // let col = [
+        //     0.58 + 0.21 * (i * s.gf[0] + 20. - f).sin() + 0.21 * (i * s.gf[3] + 17. + f).cos(),
+        //     0.58 + 0.21 * (i * s.gf[1] + 42. + f).sin() + 0.21 * (i * s.gf[4] + 26. - f).cos(),
+        //     0.58 + 0.21 * (i * s.gf[2] + 57. - f).sin() + 0.21 * (i * s.gf[5] + 35. + f).cos(),
+        // ];
 
         Self { nodes, center, phase, r, rad, col }
     }

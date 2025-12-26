@@ -8,6 +8,7 @@ mod pixel_transform;
 mod settings;
 mod warp;
 mod warp_hub;
+mod wave;
 
 pub use globals::*;
 pub use mode_blueprint::*;
@@ -19,3 +20,4 @@ pub use pixel_transform::*;
 pub use settings::*;
 pub use warp::*;
 pub use warp_hub::*;
+pub use wave::*;

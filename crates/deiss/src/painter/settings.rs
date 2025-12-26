@@ -9,6 +9,7 @@ pub struct Settings {
     pub y_roi: YRoi,
     pub gf: [f32; 6],
     pub mode_prefs: ModePrefs,
+    pub waveform_prefs: WaveformPrefs,
 }
 
 impl Settings {
@@ -84,5 +85,56 @@ impl ModePrefs {
 
     pub fn set_priority(&mut self, priority: Option<ModeId>) {
         self.priority = priority;
+    }
+}
+
+pub fn color_gen(gf: [f32; 6], f: f32, t: f32, c: [f32; 2], ph: [f32; 6]) -> [f32; 6] {
+    [
+        c[0] * (t * gf[0] + ph[0] - f).sin(),
+        c[1] * (t * gf[1] + ph[1] + f).cos(),
+        c[0] * (t * gf[2] + ph[2] + f).sin(),
+        c[1] * (t * gf[3] + ph[3] - f).cos(),
+        c[0] * (t * gf[4] + ph[4] - f).sin(),
+        c[1] * (t * gf[5] + ph[5] + f).cos(),
+    ]
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WaveformId(pub u32);
+
+#[derive(Debug, Clone, Default)]
+pub struct WaveformPrefs {
+    /// If set always pick this waveform
+    priority: Option<WaveformId>,
+}
+
+const NUM_WAVES: u32 = 6;
+
+impl WaveformPrefs {
+    pub fn priority(&self) -> Option<WaveformId> {
+        self.priority
+    }
+
+    pub fn set_priority(&mut self, priority: Option<WaveformId>) {
+        self.priority = priority;
+    }
+
+    pub fn pick(&self, mode: ModeId, rng: &mut Minstd) -> WaveformId {
+        if let Some(wid) = self.priority {
+            return wid;
+        }
+
+        loop {
+            let waveform = rng.next_idx(NUM_WAVES * 3 - 1) / 3 + 1;
+
+            if !((mode == ModeId(6) && waveform == 5)
+                || (mode == ModeId(12) && (waveform == 4 || waveform == 6))
+                || (mode == ModeId(14) && (waveform == 3 || waveform == 4))
+                || ((mode == ModeId(8) || mode == ModeId(23) || mode == ModeId(24))
+                    && waveform == 6))
+            {
+                return WaveformId(waveform);
+            }
+        }
     }
 }

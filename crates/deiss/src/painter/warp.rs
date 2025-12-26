@@ -13,7 +13,7 @@ pub struct WarpSpec {
     pub settings: Settings,
     pub effects: Effects,
     pub mode: ModeId,
-    pub waveform: u32,
+    pub waveform: WaveformId,
     pub center: Vec2i32,
     pub damping: f32,
     pub tf: AnyTransform,
@@ -34,7 +34,7 @@ impl WarpSpec {
             * if fx[mode].motion_dampened { 0.5 } else { 1.0 }
             * g.time_scale;
 
-        let waveform = pick_compatible_waveform(mode, &mut g.rand);
+        let waveform = s.waveform_prefs.pick(mode, &mut g.rand);
 
         g.big_beat_threshold = 1.10; // ??
 
@@ -48,22 +48,6 @@ impl WarpSpec {
             center: Vec2i32::new(gxc, gyc),
             damping,
             tf,
-        }
-    }
-}
-
-const NUM_WAVES: u32 = 6;
-
-fn pick_compatible_waveform(mode: ModeId, rand: &mut Minstd) -> u32 {
-    loop {
-        let waveform = rand.next_idx(NUM_WAVES * 3 - 1) / 3 + 1;
-
-        if !((mode == ModeId(6) && waveform == 5)
-            || (mode == ModeId(12) && (waveform == 4 || waveform == 6))
-            || (mode == ModeId(14) && (waveform == 3 || waveform == 4))
-            || ((mode == ModeId(8) || mode == ModeId(23) || mode == ModeId(24)) && waveform == 6))
-        {
-            return waveform;
         }
     }
 }

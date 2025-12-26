@@ -6,6 +6,9 @@ pub fn deiss_gui(ctx: &egui::Context, settings: &mut Settings, globals: &mut Glo
         egui::CollapsingHeader::new("Mode Selection")
             .default_open(true)
             .show(ui, |ui| mode_prefs_gui(ui, &mut settings.mode_prefs));
+        egui::CollapsingHeader::new("Waveform Selection")
+            .default_open(true)
+            .show(ui, |ui| waveform_prefs_gui(ui, &mut settings.waveform_prefs));
         egui::CollapsingHeader::new("Detail").default_open(true).show(ui, |ui| {
             egui::CollapsingHeader::new("GF")
                 .default_open(true)
@@ -68,6 +71,46 @@ fn mode_prefs_gui(ui: &mut egui::Ui, mode_prefs: &mut ModePrefs) {
     // Apply priority change
     if new_priority != current_priority {
         mode_prefs.set_priority(new_priority);
+    }
+}
+
+/// GUI to change waveform selection preferences
+fn waveform_prefs_gui(ui: &mut egui::Ui, waveform_prefs: &mut WaveformPrefs) {
+    let current_priority = waveform_prefs.priority();
+    let mut new_priority = current_priority;
+
+    ui.label("Select priority waveform (leave unchecked for random selection):");
+    ui.separator();
+
+    for waveform_id in 1..=7 {
+        let wid = WaveformId(waveform_id);
+        ui.horizontal(|ui| {
+            let is_current_waveform = current_priority == Some(wid);
+
+            // Priority checkbox
+            let mut is_priority = is_current_waveform;
+            let checkbox = ui.checkbox(&mut is_priority, "");
+            if checkbox.clicked() {
+                if is_priority {
+                    new_priority = Some(wid);
+                } else if is_current_waveform {
+                    new_priority = None;
+                }
+            }
+
+            // Waveform label
+            let label_color = if is_priority {
+                egui::Color32::from_rgb(255, 200, 100)
+            } else {
+                ui.style().visuals.text_color()
+            };
+            ui.colored_label(label_color, format!("Waveform {}", waveform_id));
+        });
+    }
+
+    // Apply priority change
+    if new_priority != current_priority {
+        waveform_prefs.set_priority(new_priority);
     }
 }
 

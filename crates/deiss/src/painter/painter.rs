@@ -15,6 +15,7 @@ pub struct Painter {
     fx_hub: WarpMapHub,
     fx: Option<(WarpSpec, WarpMap)>,
     needs_init: bool,
+    wave: Wave,
 }
 
 impl Painter {
@@ -36,6 +37,7 @@ impl Painter {
             y_roi: YRoi { min: YCUT, max: fxh - YCUT },
             gf: generate_gf(&mut globals.rand),
             mode_prefs: ModePrefs::new(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+            waveform_prefs: WaveformPrefs::default(),
         };
 
         let library = ModeBlueprintLibrary::new(&mut globals);
@@ -46,6 +48,7 @@ impl Painter {
             fx_hub: WarpMapHub::new(),
             fx: None,
             needs_init: true,
+            wave: Wave::new(&globals),
             settings,
             library,
             globals,
@@ -64,7 +67,7 @@ impl Painter {
 
         self.fx_hub.step(&self.settings, &self.library, &mut self.globals).ok();
         if let Some(fx) = self.fx_hub.fetch() {
-            log::info!("New mode: {:?} {:?}", fx.0.mode, fx.0.effects);
+            log::info!("New mode: {:?} W{:?} {:?}", fx.0.mode, fx.0.waveform, fx.0.effects);
             self.fx = Some(fx);
             self.needs_init = true;
         }
@@ -133,12 +136,21 @@ impl Painter {
         // render dots on beats
         fx::Nuclide::new_beat_dots(spec.center, &self.settings, &mut self.globals)
             .render(&mut self.img, &mut self.globals.rand);
+
+        self.wave.render(
+            &mut self.img,
+            spec.center,
+            spec.mode,
+            spec.waveform,
+            &self.settings,
+            &self.globals,
+        );
     }
 }
 
 impl AudioListener for Painter {
     fn buffer_size(&self) -> usize {
-        ((self.settings.fxw * 2) as usize).max((314 + 50) * 2 + 20)
+        ((self.settings.fxw * 2) as usize).max((WAVE_5_SIZE + WAVE_5_BLEND_RANGE) * 2 + 20)
     }
 
     fn on_samples(&mut self, wave: &AudioSamples) {
@@ -165,19 +177,19 @@ fn process_wave_data(wave: &AudioSamples, s: &Settings, g: &mut Globals) {
         blend(adjust_rate_to_fps(0.90, 30., g.fps_at_last_mode_switch), (g.avg_vol_peaks, peaks));
     g.volume_sum += g.avg_vol as u64;
 
+    g.vol_narrow.push(g.avg_vol_narrow);
+
     low_pass_filter_inplace(&mut buf);
 
     let fdiv = 1.0 / (64.0 * (640.0 / s.fxw as f32));
-    let billy = s.volscale * fdiv * 4.;
+    let billy = s.volscale * fdiv; // * 4.;
     scale_inplace(&mut buf, billy);
 
     // centroid for L, R channels
-    let mut centroid = channel_centroid(&buf);
-    centroid[0] /= (s.fxw as f32) * 0.125;
-    centroid[1] /= (s.fxw as f32) * 0.125;
+    let centroid = channel_centroid(&buf);
 
-    // translate wave so center is at zero
-    add_inplace(&mut buf, centroid);
+    // translate wave so center it at zero
+    sub_inplace(&mut buf, centroid);
 
     // compute power using fourier
     let mut net_power_change = g.fourier.fourier(&buf);
@@ -191,6 +203,8 @@ fn process_wave_data(wave: &AudioSamples, s: &Settings, g: &mut Globals) {
     } else {
         g.suggested_dampening = 1.0;
     }
+
+    g.sound_buffer = SoundBuffer::from_vec(buf);
 }
 
 fn adjust_rate_to_fps(per_frame_decay_rate_at_fps1: f32, fps1: f32, actual_fps: f32) -> f32 {
@@ -267,10 +281,11 @@ fn channel_centroid(buf: &[f32]) -> [f32; 2] {
         centroid[0] += buf[i];
         centroid[1] += buf[i + 1];
     }
-    centroid
+    let z = 1. / (buf.len() / 8) as f32;
+    [centroid[0] * z, centroid[1] * z]
 }
 
-fn add_inplace(buf: &mut [f32], centroid: [f32; 2]) {
+fn sub_inplace(buf: &mut [f32], centroid: [f32; 2]) {
     for i in (0..buf.len()).step_by(2) {
         buf[i] -= centroid[0];
         buf[i + 1] -= centroid[1];
